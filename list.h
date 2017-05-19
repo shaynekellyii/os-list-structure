@@ -4,14 +4,20 @@
 /**
  * Constants
  */
-#define LIST_SIZE 10
+#define NODE_POOL_SIZE 100
+#define LIST_HEAD_SIZE 10
 
 /**
  * Structs
  */
+typedef struct NODE {
+	void *item;
+	int prevIndex;
+	int nextIndex;
+} NODE;
 typedef struct LIST {
-	void *items[LIST_SIZE];
-	int current;
+	int headIndex; // Location in heads array
+	int currentIndex; // Location of current node in node pool array
 	int size;
 } LIST;
 
