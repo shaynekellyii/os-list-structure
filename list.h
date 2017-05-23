@@ -18,6 +18,7 @@ typedef struct NODE {
 typedef struct LIST {
 	int headIndex; // Location in heads array
 	int currentIndex; // Location of current node in node pool array
+	int tailIndex; // Location of tail node in node pool array 
 	int size;
 } LIST;
 
