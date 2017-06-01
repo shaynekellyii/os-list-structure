@@ -195,7 +195,7 @@ int ListAdd(LIST *list, void *item) {
 	if (LIST_IS_EMPTY) {
 		addItemToEmptyList(list, item);
 	} else if (list->size == 1) {
-		addItemToListSizeOne(list, item, 1);
+		addItemToListSizeOne(list, item, CURRENT_NODE_BEYOND_START ? 0 : 1);
 	} else if (CURRENT_NODE_BEYOND_START) {
 		ListPrepend(list, item);
 	} else if (CURRENT_NODE_BEYOND_END || CURRENT_NODE_IS_TAIL) {
@@ -213,20 +213,19 @@ int ListAdd(LIST *list, void *item) {
  * Returns 0 if successful, -1 if failed
  */
 int ListInsert(LIST *list, void *item) {
-	if (NODE_POOL_FULL) {
-		printf("The node pool is full, can't add a new item. Returning...\n\n");
+	if (list == NULL || item == NULL || NODE_POOL_FULL) {
 		return -1;
 	}
 
 	if (LIST_IS_EMPTY) {
-		printf("The list is empty, adding new item to the list...\n\n");
 		addItemToEmptyList(list, item);
+	} else if (list->size == 1) {
+		addItemToListSizeOne(list, item, CURRENT_NODE_BEYOND_END ? 1 : 0);
 	} else if (CURRENT_NODE_BEYOND_START || CURRENT_NODE_IS_HEAD) {
 		ListPrepend(list, item);
 	} else if (CURRENT_NODE_BEYOND_END) {
 		ListAppend(list, item);
 	} else {
-		printf("Adding item after the current item...\n\n");
 		addItemBetweenTwoOthers(list, item, list->current->previous, list->current);
 	}
 	return 0;
@@ -272,15 +271,12 @@ int ListPrepend(LIST *list, void *item) {
 	NODE node;
 
 	if (NODE_POOL_FULL) {
-		printf("The node pool is full, can't add a new item. Returning...\n\n");
 		return -1;
 	}
 
 	if (LIST_IS_EMPTY) {
 		addItemToEmptyList(list, item);
 	}
-
-	printf("Adding item to the start of the list...\n\n");
 
 	node.item = item;
 	node.previous = NULL;
@@ -293,6 +289,7 @@ int ListPrepend(LIST *list, void *item) {
 	list->head->previous = &nodePool[nodeIndex];
 	list->head = &nodePool[nodeIndex];
 	list->size++;
+	list->current = list->head;
 	list->currentIsBeyond = 0;
 
 	return 0;
@@ -311,20 +308,16 @@ void *ListRemove(LIST *list) {
 	ptrdiff_t nodeIndex = list->current - nodePool;
 
 	if (list->size == 1) {
-		printf("Removing the only item in the list...\n\n");
 		list->head = NULL;
 		list->current = NULL;
 		list->tail = NULL;
 	} else if (CURRENT_NODE_IS_HEAD) {
-		printf("The current node is the head, removing it...\n\n");
 		list->head = list->head->next;
 		list->head->previous = NULL;
 		list->current = list->head;
 	} else if (CURRENT_NODE_IS_TAIL) {
-		printf("The current node is the tail, removing it...\n\n");
 		return ListTrim(list);
 	} else {
-		printf("Removing the current item...\n\n");
 		NODE *preRemovedNode = list->current->previous;
 		NODE *postRemovedNode = list->current->next;
 		preRemovedNode->next = postRemovedNode;
@@ -394,7 +387,6 @@ void *ListTrim(LIST *list) {
 	void *item = list->tail->item;
 	ptrdiff_t nodeIndex = list->tail - nodePool;
 	availableNodeArr[numNodesAvailable] = nodeIndex;
-	//printf("%d\n", availableNodeArr[numNodesAvailable]);
 	numNodesAvailable++;
 
 	if (list->size > 1) {

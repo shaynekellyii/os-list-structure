@@ -24,6 +24,7 @@ static void ListNextTest();
 static void ListPrevTest();
 static void ListCurrTest();
 static void ListAddTest();
+static void ListInsertTest();
 
 static void ListTrimTest();
 
@@ -43,6 +44,7 @@ int main(void) {
 	ListPrevTest();
 	ListCurrTest();
 	ListAddTest();
+	ListInsertTest();
 
 	ListTrimTest();
 
@@ -455,6 +457,7 @@ static void ListCurrTest() {
 	/* Test Case 5 */
 	testInt[1] = 1;
 	testInt[2] = 2;
+	ListFirst(list);
 	ListAdd(list, (void *)&testInt[1]);
 	ListAdd(list, (void *)&testInt[2]);
 	ListFirst(list);
@@ -499,6 +502,7 @@ static void ListCurrTest() {
  * 4. Add item to empty list, check list params
  * 5. Add item to list with one item, check list params
  * 6. Add item to list with multiple items, check list params
+ * TODO: Add more cases if time (different current pointers).
  */
 static void ListAddTest() {
 	LIST *list = ListCreate();
@@ -573,6 +577,91 @@ static void ListAddTest() {
 	/* Cleanup */
 	ListFree(list, NULL);
 	printf("ListAdd tests passed. 23 assertions passed.\n");
+}
+
+/**
+ * 1. Insert null item
+ * 2. Insert item to null list
+ * 3. Insert item after node pool full
+ * 4. Insert item to empty list, check list params
+ * 5. Insert item to list with one item, check list params
+ * 6. Insert item to list with multiple items, check list params
+ * TODO: Add more cases if time.
+ */
+static void ListInsertTest() {
+	LIST *list = ListCreate();
+	float testFloat[100] = {1.0};
+
+	/* Test Case 1 */
+	assert(ListInsert(list, NULL) == -1
+		&& "FAIL: Inserting NULL item did not return -1\n");
+
+	/* Test Case 2 */
+	assert(ListInsert(NULL, &testFloat[0]) == -1
+		&& "FAIL: Inserting item to NULL list did not return -1\n");
+
+	/* Test Case 3 */
+	for (int i = 0; i < 100; i++) {
+		ListInsert(list, &testFloat[i]);
+	}
+	assert(ListInsert(NULL, &testFloat[0]) == -1
+		&& "FAIL: Inserting item after node pool full did not return -1\n");
+	ListFree(list, NULL);
+	list = ListCreate();
+
+	/* Test Case 4 */
+	ListInsert(list, &testFloat[0]);
+	assert(ListCurr(list) == &testFloat[0]
+		&& "FAIL: The list's current item is not the inserted item\n");
+	assert(list->size == 1
+		&& "FAIL: The list's size is wrong for a list with a single item\n");
+	assert(list->head->item == &testFloat[0]
+		&& "FAIL: The list's head is wrong for a list with a single item\n");
+	assert(list->tail->item == &testFloat[0]
+		&& "FAIL: The list's tail is wrong for a list with a single item\n");
+	assert(list->current->next == NULL
+		&& "FAIL: The list's inserted item's next pointer is wrong\n");
+	assert(list->current->previous == NULL
+		&& "FAIL: The list's inserted item's previous pointer is wrong\n");
+
+	/* Test Case 5 */
+	ListInsert(list, &testFloat[1]);
+	assert(ListCurr(list) == &testFloat[1]
+		&& "FAIL: The list's current item is not the inserted item\n");
+	assert(list->size == 2
+		&& "FAIL: The list's size is wrong for a list with two items\n");
+	assert(list->head->item == &testFloat[1]
+		&& "FAIL: The list's head is wrong for a list with two items\n");
+	assert(list->tail->item == &testFloat[0]
+		&& "FAIL: The list's tail is wrong for a list with a two items\n");
+	assert(list->current->next->item == &testFloat[0]
+		&& "FAIL: The list's inserted item's next pointer is wrong\n");
+	assert(list->current->previous == NULL
+		&& "FAIL: The list's inserted item's previous pointer is wrong\n");
+	assert(list->tail->previous->item == &testFloat[1]
+		&& "FAIL: The list tail's previous pointer is wrong\n");
+
+	/* Test Case 6 */
+	ListInsert(list, &testFloat[2]);
+	assert(ListCurr(list) == &testFloat[2]
+		&& "FAIL: The list's current item is not the inserted item\n");
+	assert(list->size == 3
+		&& "FAIL: The list's size is wrong for a list with three items\n");
+	assert(list->head->item == &testFloat[2]
+		&& "FAIL: The list's head is wrong for a list with three items\n");
+	assert(list->tail->item == &testFloat[0]
+		&& "FAIL: The list's tail is wrong for a list with a three items\n");
+	assert(list->current->next->item == &testFloat[1]
+		&& "FAIL: The list's inserted item's next pointer is wrong\n");
+	assert(list->current->previous == NULL
+		&& "FAIL: The list's inserted item's previous pointer is wrong\n");
+	assert(list->current->next->previous->item == &testFloat[2]
+		&& "FAIL: The list item after the inserted item did not update its previous pointer\n");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("ListInsert tests passed. X assertions passed.\n");
+
 }
 
 /**
