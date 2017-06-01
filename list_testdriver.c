@@ -22,6 +22,7 @@ static void ListFirstTest();
 static void ListLastTest();
 static void ListNextTest();
 static void ListPrevTest();
+static void ListCurrTest();
 
 static void ListTrimTest();
 
@@ -39,6 +40,7 @@ int main(void) {
 	ListLastTest();
 	ListNextTest();
 	ListPrevTest();
+	ListCurrTest();
 
 	ListTrimTest();
 
@@ -409,6 +411,82 @@ static void ListPrevTest() {
 	/* Cleanup */
 	ListFree(list, NULL);
 	printf("ListPrev tests passed. 26 assertions passed.\n");
+}
+
+/**
+ * 1. Check current item of empty list.
+ * 2. Check current item of list with one item when current item is first.
+ * 3. Check current item of list with one item when current item is beyond the end of the list.
+ * 4. Check current item of list with one item when current item is beyond the start of the list.
+ * 5. Check current item of list with multiple items when current item is beyond the start.
+ * 6. Check current item of list with multiple items when current item is first.
+ * 7. Check current item of list with multiple items when current item is in the middle.
+ * 8. Check current item of list with multiple items when current item is the last.
+ * 9. Check current item of list with multiple items when current item is beyond the end.
+ * 10. Check current item of NULL list returns NULL.
+ */
+static void ListCurrTest() {
+	LIST *list = ListCreate();
+
+	/* Test Case 1 */
+	assert(ListCurr(list) == NULL
+		&& "FAIL: Checking current item of empty list returned non-NULL\n");
+
+	/* Test Case 2 */
+	int testInt[10];
+	testInt[0] = 0;
+	ListAdd(list, (void *)&testInt[0]);
+	assert(ListCurr(list) == &testInt[0]
+		&& "FAIL: Checking current item of list with one item returned wrong value\n");
+
+	/* Test Case 3 */
+	ListNext(list);
+	assert(ListCurr(list) == NULL
+		&& "FAIL: Checking current item of list with one item when current item is beyond the end returned non-NULL\n");
+
+	/* Test Case 4 */
+	ListFirst(list);
+	ListPrev(list);
+	assert(ListCurr(list) == NULL
+		&& "FAIL: Checking current item of list with one item when current item is beyond the start returned non-NULL\n");
+
+	/* Test Case 5 */
+	testInt[1] = 1;
+	testInt[2] = 2;
+	ListAdd(list, (void *)&testInt[1]);
+	ListAdd(list, (void *)&testInt[2]);
+	ListFirst(list);
+	ListPrev(list);
+	assert(ListCurr(list) == NULL
+		&& "FAIL: Checking current item of list with multiple items when current item is beyond the start returned non-NULL\n");
+
+	/* Test Case 6 */
+	ListFirst(list);
+	assert(ListCurr(list) == &testInt[0]
+		&& "FAIL: Checking current item of list with multiple items when current item is the first returned the wrong value\n");
+
+	/* Test Case 7 */
+	ListNext(list);
+	assert(ListCurr(list) == &testInt[1]
+		&& "FAIL: Checking current item of list with multiple items when current item is in the middle returned the wrong value\n");
+
+	/* Test Case 8 */
+	ListNext(list);
+	assert(ListCurr(list) == &testInt[2]
+		&& "FAIL: Checking current item of list with multiple items when current item is the last returned non-NULL\n");
+
+	/* Test Case 9 */
+	ListNext(list);
+	assert(ListCurr(list) == NULL
+		&& "FAIL: Checking current item of list with multiple items when current item is beyond the end returned non-NULL\n");
+
+	/* Test Case 10 */
+	assert(ListPrev(NULL) == NULL
+		&& "FAIL: Checking current item of a NULL list returned non-NULL");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("ListCurr tests passed. 10 assertions passed.\n");
 }
 
 /**

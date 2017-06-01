@@ -102,6 +102,7 @@ void *ListFirst(LIST *list) {
 	}
 
 	list->current = list->head;
+	list->currentIsBeyond = 0;
 	return list->current->item;
 }
 
@@ -174,12 +175,9 @@ void *ListPrev(LIST *list) {
  * Returns a pointer to the current item in the list
  */
 void *ListCurr(LIST *list) {
-	if (CURRENT_NODE_BEYOND_START || CURRENT_NODE_BEYOND_END) {
-		printf("The current index is beyond the boundaries of the list, returning NULL\n\n");
+	if (list == NULL || LIST_IS_EMPTY || CURRENT_NODE_BEYOND_START || CURRENT_NODE_BEYOND_END) {
 		return NULL;
-	}
-
-	printf("Returning the current item, it has address %p\n\n", list->current->item);
+	}	
 	return list->current->item;
 }
 
