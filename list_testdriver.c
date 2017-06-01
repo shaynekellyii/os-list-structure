@@ -26,6 +26,7 @@ static void ListCurrTest();
 static void ListAddTest();
 static void ListInsertTest();
 static void ListAppendTest();
+static void ListPrependTest();
 
 static void ListTrimTest();
 
@@ -47,6 +48,7 @@ int main(void) {
 	ListAddTest();
 	ListInsertTest();
 	ListAppendTest();
+	ListPrependTest();
 
 	ListTrimTest();
 
@@ -697,7 +699,7 @@ static void ListAppendTest() {
 	/* Test Case 4 */
 	ListAppend(list, &testFloat[0]);
 	assert(ListCurr(list) == &testFloat[0]
-		&& "FAIL: The list's current item is not the inserted item\n");
+		&& "FAIL: The list's current item is not the appended item\n");
 	assert(list->size == 1
 		&& "FAIL: The list's size is wrong for a list with a single item\n");
 	assert(list->head->item == &testFloat[0]
@@ -705,14 +707,14 @@ static void ListAppendTest() {
 	assert(list->tail->item == &testFloat[0]
 		&& "FAIL: The list's tail is wrong for a list with a single item\n");
 	assert(list->current->next == NULL
-		&& "FAIL: The list's inserted item's next pointer is wrong\n");
+		&& "FAIL: The list's appended item's next pointer is wrong\n");
 	assert(list->current->previous == NULL
-		&& "FAIL: The list's inserted item's previous pointer is wrong\n");
+		&& "FAIL: The list's appended item's previous pointer is wrong\n");
 
 	/* Test Case 5 */
 	ListAppend(list, &testFloat[1]);
 	assert(ListCurr(list) == &testFloat[1]
-		&& "FAIL: The list's current item is not the inserted item\n");
+		&& "FAIL: The list's current item is not the appended item\n");
 	assert(list->size == 2
 		&& "FAIL: The list's size is wrong for a list with two items\n");
 	assert(list->head->item == &testFloat[0]
@@ -720,16 +722,16 @@ static void ListAppendTest() {
 	assert(list->tail->item == &testFloat[1]
 		&& "FAIL: The list's tail is wrong for a list with a two items\n");
 	assert(list->current->previous->item == &testFloat[0]
-		&& "FAIL: The list's inserted item's next pointer is wrong\n");
+		&& "FAIL: The list's appended item's previous pointer is wrong\n");
 	assert(list->current->next == NULL
-		&& "FAIL: The list's inserted item's previous pointer is wrong\n");
+		&& "FAIL: The list's appended item's next pointer is wrong\n");
 	assert(list->head->next->item == &testFloat[1]
-		&& "FAIL: The list tail's previous pointer is wrong\n");
+		&& "FAIL: The list head's next pointer is wrong\n");
 
 	/* Test Case 6 */
 	ListAppend(list, &testFloat[2]);
 	assert(ListCurr(list) == &testFloat[2]
-		&& "FAIL: The list's current item is not the inserted item\n");
+		&& "FAIL: The list's current item is not the appended item\n");
 	assert(list->size == 3
 		&& "FAIL: The list's size is wrong for a list with three items\n");
 	assert(list->head->item == &testFloat[0]
@@ -737,15 +739,98 @@ static void ListAppendTest() {
 	assert(list->tail->item == &testFloat[2]
 		&& "FAIL: The list's tail is wrong for a list with a three items\n");
 	assert(list->current->previous->item == &testFloat[1]
-		&& "FAIL: The list's inserted item's next pointer is wrong\n");
+		&& "FAIL: The list's appended item's previous pointer is wrong\n");
 	assert(list->current->next == NULL
-		&& "FAIL: The list's inserted item's previous pointer is wrong\n");
+		&& "FAIL: The list's appended item's next pointer is wrong\n");
 	assert(list->current->previous->next->item == &testFloat[2]
-		&& "FAIL: The list item before the inserted item did not update its previous pointer\n");
+		&& "FAIL: The list item before the appended item did not update its previous pointer\n");
 
 	/* Cleanup */
 	ListFree(list, NULL);
 	printf("ListAppend tests passed. 23 assertions passed.\n");
+}
+
+/**
+ * 1. Prepend null item
+ * 2. Prepend item to null list
+ * 3. Prepend item after node pool full
+ * 4. Prepend item to empty list, check list params
+ * 5. Prepend item to list with one item, check list params
+ * 6. Prepend item to list with multiple items, check list params
+ */
+static void ListPrependTest() {
+	LIST *list = ListCreate();
+	float testFloat[100] = {1.0};
+
+	/* Test Case 1 */
+	assert(ListPrepend(list, NULL) == -1
+		&& "FAIL: Prepending NULL item did not return -1\n");
+
+	/* Test Case 2 */
+	assert(ListPrepend(NULL, &testFloat[0]) == -1
+		&& "FAIL: Prepending item to NULL list did not return -1\n");
+
+	/* Test Case 3 */
+	for (int i = 0; i < 100; i++) {
+		ListPrepend(list, &testFloat[i]);
+	}
+	assert(ListPrepend(NULL, &testFloat[0]) == -1
+		&& "FAIL: Prepending item after node pool full did not return -1\n");
+	ListFree(list, NULL);
+	list = ListCreate();
+
+	/* Test Case 4 */
+	ListPrepend(list, &testFloat[0]);
+	assert(ListCurr(list) == &testFloat[0]
+		&& "FAIL: The list's current item is not the prepended item\n");
+	assert(list->size == 1
+		&& "FAIL: The list's size is wrong for a list with a single item\n");
+	assert(list->head->item == &testFloat[0]
+		&& "FAIL: The list's head is wrong for a list with a single item\n");
+	assert(list->tail->item == &testFloat[0]
+		&& "FAIL: The list's tail is wrong for a list with a single item\n");
+	assert(list->current->next == NULL
+		&& "FAIL: The list's prepended item's next pointer is wrong\n");
+	assert(list->current->previous == NULL
+		&& "FAIL: The list's prepended item's previous pointer is wrong\n");
+
+	/* Test Case 5 */
+	ListPrepend(list, &testFloat[1]);
+	assert(ListCurr(list) == &testFloat[1]
+		&& "FAIL: The list's current item is not the prepended item\n");
+	assert(list->size == 2
+		&& "FAIL: The list's size is wrong for a list with two items\n");
+	assert(list->head->item == &testFloat[1]
+		&& "FAIL: The list's head is wrong for a list with two items\n");
+	assert(list->tail->item == &testFloat[0]
+		&& "FAIL: The list's tail is wrong for a list with a two items\n");
+	assert(list->current->next->item == &testFloat[0]
+		&& "FAIL: The list's prepended item's next pointer is wrong\n");
+	assert(list->current->previous == NULL
+		&& "FAIL: The list's prepended item's previous pointer is wrong\n");
+	assert(list->tail->previous->item == &testFloat[1]
+		&& "FAIL: The list tail's previous pointer is wrong\n");
+
+	/* Test Case 6 */
+	ListPrepend(list, &testFloat[2]);
+	assert(ListCurr(list) == &testFloat[2]
+		&& "FAIL: The list's current item is not the prepended item\n");
+	assert(list->size == 3
+		&& "FAIL: The list's size is wrong for a list with three items\n");
+	assert(list->head->item == &testFloat[2]
+		&& "FAIL: The list's head is wrong for a list with three items\n");
+	assert(list->tail->item == &testFloat[0]
+		&& "FAIL: The list's tail is wrong for a list with a three items\n");
+	assert(list->current->next->item == &testFloat[1]
+		&& "FAIL: The list's prepended item's next pointer is wrong\n");
+	assert(list->current->previous == NULL
+		&& "FAIL: The list's prepended item's previous pointer is wrong\n");
+	assert(list->current->next->previous->item == &testFloat[2]
+		&& "FAIL: The list item after the prepended item did not update its previous pointer\n");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("ListPrepend tests passed. 23 assertions passed.\n");
 }
 
 /**

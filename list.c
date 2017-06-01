@@ -276,6 +276,7 @@ int ListPrepend(LIST *list, void *item) {
 
 	if (LIST_IS_EMPTY) {
 		addItemToEmptyList(list, item);
+		return 0;
 	}
 
 	node.item = item;
