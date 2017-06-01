@@ -150,10 +150,20 @@ void *ListNext(LIST *list) {
  * Returns NULL if the current item advances beyond the start of the list.
  */
 void *ListPrev(LIST *list) {
+	if (list == NULL) {
+		return NULL;
+	}
+
 	if (CURRENT_NODE_BEYOND_START || CURRENT_NODE_IS_HEAD) {
 		list->current = NULL;
 		list->currentIsBeyond = -1;
 		return NULL;
+	}
+
+	if (CURRENT_NODE_BEYOND_END) {
+		list->current = list->tail;
+		list->currentIsBeyond = 0;
+		return list->current->item;
 	}
 
 	list->current = list->current->previous;
@@ -249,6 +259,7 @@ int ListAppend(LIST *list, void *item) {
 
 	list->tail->next = &nodePool[nodeIndex];
 	list->tail = &nodePool[nodeIndex];
+	list->current = list->tail;
 	list->size++;
 	list->currentIsBeyond = 0;
 

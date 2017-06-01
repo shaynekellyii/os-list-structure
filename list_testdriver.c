@@ -21,6 +21,7 @@ static void ListCountTest();
 static void ListFirstTest();
 static void ListLastTest();
 static void ListNextTest();
+static void ListPrevTest();
 
 static void ListTrimTest();
 
@@ -37,6 +38,7 @@ int main(void) {
 	ListFirstTest();
 	ListLastTest();
 	ListNextTest();
+	ListPrevTest();
 
 	ListTrimTest();
 
@@ -207,8 +209,8 @@ static void ListLastTest() {
 /**
  * 1. Check next item of empty list returns NULL.
  * 2. Check next item of list with one item when current item is first.
- * 3. Check next item of list with one item when current item is beyond the start of the list.
- * 4. Check next item of list with one item when current item is beyond the end of the list.
+ * 3. Check next item of list with one item when current item is beyond the end of the list.
+ * 4. Check next item of list with one item when current item is beyond the start of the list.
  * 5. Check next item of list with multiple items when current item is beyond the start.
  * 6. Check next item of list with multiple items when current item is first.
  * 7. Check next item of list with multiple items when current item is in the middle.
@@ -284,7 +286,7 @@ static void ListNextTest() {
 
 	/* Test Case 8 */
 	assert(ListNext(list) == NULL
-		&& "FAIL: Checking next item of list with one item when current item is the last returned non-NULL\n");
+		&& "FAIL: Checking next item of list with multiple items when current item is the last returned non-NULL\n");
 	assert(list->current == NULL
 		&& "FAIL: The current item was not set to NULL\n");
 	assert(list->currentIsBeyond == 1
@@ -292,7 +294,7 @@ static void ListNextTest() {
 
 	/* Test Case 9 */
 	assert(ListNext(list) == NULL
-		&& "FAIL: Checking next item of list with one item when current item is beyond the end returned non-NULL\n");
+		&& "FAIL: Checking next item of list with multiple items when current item is beyond the end returned non-NULL\n");
 	assert(list->current == NULL
 		&& "FAIL: The current item was not set to NULL\n");
 	assert(list->currentIsBeyond == 1
@@ -307,6 +309,107 @@ static void ListNextTest() {
 	printf("ListNext tests passed. 26 assertions passed.\n");
 }
 
+/**
+ * 1. Check prev item of empty list returns NULL.
+ * 2. Check prev item of list with one item when current item is first.
+ * 3. Check prev item of list with one item when current item is beyond the start of the list.
+ * 4. Check prev item of list with one item when current item is beyond the end of the list.
+ * 5. Check prev item of list with multiple items when current item is beyond the end.
+ * 6. Check prev item of list with multiple items when current item is the last.
+ * 7. Check prev item of list with multiple items when current item is in the middle.
+ * 8. Check prev item of list with multiple items when current item is the first.
+ * 9. Check prev item of list with multiple items when current item is beyond the start.
+ * 10. Check prev item of NULL list returns NULL.
+ */
+static void ListPrevTest() {
+	LIST *list = ListCreate();
+
+	/* Test Case 1 */
+	assert(ListPrev(list) == NULL
+		&& "FAIL: Checking prev item of empty list returned non-NULL\n");
+
+	/* Test Case 2 */
+	int testInt[10];
+	testInt[0] = 0;
+	ListAdd(list, (void *)&testInt[0]);
+	assert(ListPrev(list) == NULL
+		&& "FAIL: Checking prev item of list with one item returned non-NULL\n");
+	assert(list->current == NULL
+		&& "FAIL: The current item was not set to NULL\n");
+	assert(list->currentIsBeyond == -1
+		&& "FAIL: The list does not recognise that the current pointer is beyond the list bounds\n");
+
+	/* Test Case 3 */
+	assert(ListPrev(list) == NULL
+		&& "FAIL: Checking prev item of list with one item when current item is beyond the start returned non-NULL\n");
+	assert(list->current == NULL
+		&& "FAIL: The current item was not set to NULL\n");
+	assert(list->currentIsBeyond == -1
+		&& "FAIL: The list does not recognise that the current pointer is beyond the list bounds\n");
+
+	/* Test Case 4 */
+	ListLast(list);
+	ListNext(list);
+	assert(ListPrev(list) == &testInt[0]
+		&& "FAIL: Checking prev item of list with one item when current item is beyond the end returned the wrong value\n");
+	assert(list->current->item == &testInt[0]
+		&& "FAIL: The current item was not set to the prev item\n");
+	assert(list->currentIsBeyond == 0
+		&& "FAIL: The list does not recognise that the current pointer is no longer beyond the list bounds\n");
+
+	/* Test Case 5 */
+	testInt[1] = 1;
+	testInt[2] = 2;
+	ListAdd(list, (void *)&testInt[1]);
+	ListAdd(list, (void *)&testInt[2]);
+	ListNext(list);
+	assert(ListPrev(list) == &testInt[2]
+		&& "FAIL: Checking prev item of list with multiple items when current item is beyond the end returned the wrong value\n");
+	assert(list->current->item == &testInt[2]
+		&& "FAIL: The current item was not set to the prev item\n");
+	assert(list->currentIsBeyond == 0
+		&& "FAIL: The list does not recognise that the current pointer is no longer beyond the list bounds\n");
+
+	/* Test Case 6 */
+	assert(ListPrev(list) == &testInt[1]
+		&& "FAIL: Checking prev item of list with multiple items when current item is the last returned the wrong value\n");
+	assert(list->current->item == &testInt[1]
+		&& "FAIL: The current item was not set to the prev item\n");
+	assert(list->currentIsBeyond == 0
+		&& "FAIL: The list does not recognise that the current pointer is no longer beyond the list bounds\n");
+
+	/* Test Case 7 */
+	assert(ListPrev(list) == &testInt[0]
+		&& "FAIL: Checking prev item of list with multiple items when current item is in the middle returned the wrong value\n");
+	assert(list->current->item == &testInt[0]
+		&& "FAIL: The current item was not set to the prev item\n");
+	assert(list->currentIsBeyond == 0
+		&& "FAIL: The list does not recognise that the current pointer is no longer beyond the list bounds\n");
+
+	/* Test Case 8 */
+	assert(ListPrev(list) == NULL
+		&& "FAIL: Checking prev item of list with multiple items when current item is the first returned non-NULL\n");
+	assert(list->current == NULL
+		&& "FAIL: The current item was not set to NULL\n");
+	assert(list->currentIsBeyond == -1
+		&& "FAIL: The list does not recognise that the current pointer is beyond the list bounds\n");
+
+	/* Test Case 9 */
+	assert(ListPrev(list) == NULL
+		&& "FAIL: Checking prev item of list with multiple items when current item is beyond the start returned non-NULL\n");
+	assert(list->current == NULL
+		&& "FAIL: The current item was not set to NULL\n");
+	assert(list->currentIsBeyond == -1
+		&& "FAIL: The list does not recognise that the current pointer is beyond the list bounds\n");
+
+	/* Test Case 10 */
+	assert(ListPrev(NULL) == NULL
+		&& "FAIL: Checking next item of a NULL list returned non-NULL");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("ListPrev tests passed. 26 assertions passed.\n");
+}
 
 /**
  * 1. Trim list with one item.
