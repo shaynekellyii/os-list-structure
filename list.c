@@ -97,7 +97,7 @@ int ListCount(LIST *list) {
  * Returns NULL if the list is empty.
  */
 void *ListFirst(LIST *list) {
-	if (LIST_IS_EMPTY) {
+	if (list == NULL || LIST_IS_EMPTY) {
 		return NULL;
 	}
 
@@ -110,7 +110,7 @@ void *ListFirst(LIST *list) {
  * Returns NULL if the list is empty.
  */
 void *ListLast(LIST *list) {
-	if (LIST_IS_EMPTY) {
+	if (list == NULL || LIST_IS_EMPTY) {
 		return NULL;
 	}
 
@@ -124,15 +124,23 @@ void *ListLast(LIST *list) {
  * Returns NULL if the current item advances beyond the end of the list.
  */
 void *ListNext(LIST *list) {
-	if (CURRENT_NODE_BEYOND_END || CURRENT_NODE_IS_TAIL) {
-		printf("The current item is now beyond the end of the list, returning NULL\n\n");
+	if (list == NULL) {
+		return NULL;
+	}
+
+	if (CURRENT_NODE_BEYOND_END || CURRENT_NODE_IS_TAIL || LIST_IS_EMPTY) {
 		list->current = NULL;
 		list->currentIsBeyond = 1;
 		return NULL;
 	}
 
+	if (CURRENT_NODE_BEYOND_START) {
+		list->current = list->head;
+		list->currentIsBeyond = 0;
+		return list->current->item;
+	}
+
 	list->current = list->current->next;
-	printf("Incremented current item, the new item has address %p\n\n", list->current->item);
 	return list->current->item;
 }
 
@@ -143,14 +151,12 @@ void *ListNext(LIST *list) {
  */
 void *ListPrev(LIST *list) {
 	if (CURRENT_NODE_BEYOND_START || CURRENT_NODE_IS_HEAD) {
-		printf("The current item is now beyond the start of the list, returning NULL\n\n");
 		list->current = NULL;
 		list->currentIsBeyond = -1;
 		return NULL;
 	}
 
 	list->current = list->current->previous;
-	printf("Decremented current item, the new item has address %p\n\n", list->current->item);
 	return list->current->item;
 }
 
