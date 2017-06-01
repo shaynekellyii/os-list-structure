@@ -14,21 +14,27 @@
 /***************************************************************
  * Defines                                                     *
  ***************************************************************/
-#define NODE_POOL_FULL				(nodesUsed >= NODE_POOL_SIZE)
-#define HEAD_POOL_FULL				(headsUsed >= LIST_HEAD_SIZE)
+#define NODE_POOL_SIZE 100
+#define LIST_POOL_SIZE 10
+
+#define NODE_POOL_FULL				(numNodesAvailable <= 0)
+#define LIST_POOL_FULL				(numListsAvailable <= 0)
 #define LIST_IS_EMPTY				(list->size == 0)
-#define CURRENT_NODE_BEYOND_START	(list->currentIndex == -1)
-#define CURRENT_NODE_BEYOND_END		(list->currentIndex == NODE_POOL_SIZE)
-#define CURRENT_NODE_IS_HEAD		(list->currentIndex == listHeads[list->headIndex])
+#define CURRENT_NODE_BEYOND_START	(list->currentIsBeyond == -1)
+#define CURRENT_NODE_BEYOND_END		(list->currentIsBeyond == 1)
+#define CURRENT_NODE_IS_HEAD		(list->currentIndex == list->headIndex])
 #define CURRENT_NODE_IS_TAIL		(list->currentIndex == list->tailIndex)
 
 /***************************************************************
  * Statics                                                     *
  ***************************************************************/
 static NODE nodePool[NODE_POOL_SIZE];
-static int listHeads[LIST_HEAD_SIZE];
-static int nodesUsed = 0;
-static int headsUsed = 0;
+static LIST listPool[LIST_POOL_SIZE];
+static int availableNodeArr[NODE_POOL_SIZE];
+static int availableListArr[LIST_POOL_SIZE];
+static int numNodesAvailable = NODE_POOL_SIZE;
+static int numListsAvailable = LIST_POOL_SIZE;
+static int initialisationFlag = 0;
 
 static void *getNodeItemFromPoolByIndex(int index);
 static void addItemToEmptyList(LIST *list, void *item);
@@ -42,26 +48,37 @@ static void addItemBetweenTwoOthers(LIST *list, void *item, int pre, int post);
  * Creates a new list and returns a pointer to it.
  */
 LIST *ListCreate(void) {
+	LIST list;
+
+	/* Set all of the indices of the available nodes when the first list is created */
+	if (!initialisationFlag) {
+		for (int i = 0; i < NODE_POOL_SIZE; i++) {
+			availableNodes[i] = i;
+		}
+		for (int i = 0; i < LIST_POOL_SIZE; i++) {
+			availableLists[i] = i;
+		}
+		initialisationFlag = 1;
+	}
+
 	printf("Creating a new empty list...\n\n");
 
-	if (NODE_POOL_FULL || HEAD_POOL_FULL) {
+	if (NODE_POOL_FULL || LIST_POOL_FULL) {
 		printf("There is no space for the list... returning NULL\n\n");
 		return NULL;
 	}
 
-	LIST *list = malloc(sizeof(LIST));
-	if (list == NULL) {
-		return NULL;
-	}
+	list.current = NULL;
+	list.head = NULL;
+	list.tail = NULL;
+	list.size = 0;
+	list.currentIsBeyond = 0;
 
-	list->headIndex = headsUsed;
-	listHeads[list->headIndex] = 0;
-	headsUsed++;
+	int listIndex = availableListArr[numListsAvailable - 1];
+	listPool[listIndex] = list;
+	numListsAvailable--;
 
-	list->currentIndex = -1;
-	list->tailIndex = -1;
-	list->size = 0;
-	return list;
+	return &listPool[listIndex];
 }
 
 /** 
@@ -83,9 +100,9 @@ void *ListFirst(LIST *list) {
 	}
 
 	printf("Setting the current item to the head\n");
-	list->currentIndex = listHeads[list->headIndex];
-	printf("Returning the first item, it has address %p\n\n", getNodeItemFromPoolByIndex(list->currentIndex));
-	return getNodeItemFromPoolByIndex(list->currentIndex);
+	list->current = list->head;
+	printf("Returning the first item, it has address %p\n\n", list->current->item;
+	return list->current->item;
 }
 
 /**
@@ -99,9 +116,9 @@ void *ListLast(LIST *list) {
 	}
 
 	printf("Setting the current item to the tail\n");
-	list->currentIndex = list->tailIndex;
-	printf("Returning the last item, it has address %p\n\n", getNodeItemFromPoolByIndex(list->currentIndex));
-	return getNodeItemFromPoolByIndex(list->currentIndex);
+	list->current = list->tail;
+	printf("Returning the last item, it has address %p\n\n", list->current->item);
+	return list->current->item;
 }
 
 /**
@@ -112,13 +129,14 @@ void *ListLast(LIST *list) {
 void *ListNext(LIST *list) {
 	if (CURRENT_NODE_BEYOND_END || CURRENT_NODE_IS_TAIL) {
 		printf("The current item is now beyond the end of the list, returning NULL\n\n");
-		list->currentIndex = NODE_POOL_SIZE;
+		list->current = NULL;
+		list->currentIsBeyond = 1;
 		return NULL;
 	}
 
-	list->currentIndex = nodePool[list->currentIndex].nextIndex;
-	printf("Incremented current item, the new item has address %p\n\n", getNodeItemFromPoolByIndex(list->currentIndex));
-	return getNodeItemFromPoolByIndex(list->currentIndex);
+	list->current = list->current->next;
+	printf("Incremented current item, the new item has address %p\n\n", list->current->item);
+	return list->current->item;
 }
 
 /**
@@ -129,13 +147,14 @@ void *ListNext(LIST *list) {
 void *ListPrev(LIST *list) {
 	if (CURRENT_NODE_BEYOND_START || CURRENT_NODE_IS_HEAD) {
 		printf("The current item is now beyond the start of the list, returning NULL\n\n");
-		list->currentIndex = -1;
+		list->current = NULL;
+		list->currentIsBeyond = -1;
 		return NULL;
 	}
 
-	list->currentIndex = nodePool[list->currentIndex].prevIndex;
-	printf("Decremented current item, the new item has address %p\n\n", getNodeItemFromPoolByIndex(list->currentIndex));
-	return getNodeItemFromPoolByIndex(list->currentIndex);
+	list->current = list->current->previous;
+	printf("Decremented current item, the new item has address %p\n\n", list->current->item);
+	return list->current->item;
 }
 
 /**
@@ -147,8 +166,8 @@ void *ListCurr(LIST *list) {
 		return NULL;
 	}
 
-	printf("Returning the current item, it has address %p\n\n", getNodeItemFromPoolByIndex(list->currentIndex));
-	return getNodeItemFromPoolByIndex(list->currentIndex);
+	printf("Returning the current item, it has address %p\n\n", list->current->item);
+	return list->current->item;
 }
 
 /**
@@ -172,7 +191,7 @@ int ListAdd(LIST *list, void *item) {
 		ListAppend(list, item);
 	} else {
 		printf("Adding item after the current item...\n\n");
-		addItemBetweenTwoOthers(list, item, list->currentIndex, nodePool[list->currentIndex].nextIndex);
+		addItemBetweenTwoOthers(list, item, list->current, list->current->next;
 	}
 	return 0;
 }
@@ -214,27 +233,25 @@ int ListAppend(LIST *list, void *item) {
 		printf("The node pool is full, can't add a new item. Returning...\n\n");
 		return -1;
 	}
-
 	if (LIST_IS_EMPTY) {
 		addItemToEmptyList(list, item);
+		return 0;
 	}
 
 	printf("Adding item to the end of the list...\n\n");
 
-	int oldTailIndex = list->tailIndex;
-	NODE oldTail = nodePool[oldTailIndex];
-	oldTail.nextIndex = nodesUsed;
-	nodePool[oldTailIndex] = oldTail;
-
 	node.item = item;
-	node.prevIndex = oldTailIndex;
-	node.nextIndex = -1;
-	nodePool[nodesUsed] = node;
+	node.prev = list->tail;
+	node.next = NULL;
+	
+	int nodeIndex = availableNodeArr[numNodesAvailable - 1]
+	nodePool[nodeIndex] = node;
+	numNodesAvailable--;
 
-	list->tailIndex = nodesUsed;
-	list->currentIndex = nodesUsed; 
+	list->tail->next = &nodePool[nodeIndex];
+	list->tail = &nodePool[nodeIndex];
 	list->size++;
-	nodesUsed++;
+	list->currentIsBeyond = 0;
 
 	return 0;
 }
@@ -257,67 +274,61 @@ int ListPrepend(LIST *list, void *item) {
 
 	printf("Adding item to the start of the list...\n\n");
 
-	int oldHeadIndex = listHeads[list->headIndex];
-	NODE oldHead = nodePool[oldHeadIndex];
-	oldHead.prevIndex = nodesUsed;
-	nodePool[oldHeadIndex] = oldHead;
-
 	node.item = item;
-	node.prevIndex = -1;
-	node.nextIndex = listHeads[oldHeadIndex];
-	nodePool[nodesUsed] = node;
+	node.prev = NULL;
+	node.next = list->head;
 
-	list->currentIndex = nodesUsed;
-	listHeads[list->headIndex] = nodesUsed;
+	int nodeIndex = availableNodeArr[numNodesAvailable - 1];
+	nodePool[nodeIndex] = node;
+	numNodesAvailable--;
+
+	list->head->prev = &nodePool[nodeIndex];
+	list->head = &nodePool[nodeIndex];
 	list->size++;
-	nodesUsed++;
+	list->currentIsBeyond = 0;
 
 	return 0;
 }
 
 /**
  * Return current item and take it out of the list.
- * Make the next item the current one. (Which is next?)
+ * Make the next item the current one.
  */
 void *ListRemove(LIST *list) {
 	if (LIST_IS_EMPTY || CURRENT_NODE_BEYOND_START || CURRENT_NODE_BEYOND_END) {
 		return NULL;
 	}
 
-	NODE node = nodePool[list->currentIndex];
-	void *item = node.item;
+	void *item = list->current->item;
+	ptrdiff_t nodeIndex = list->current - nodePool;
 
 	if (list->size == 1) {
 		printf("Removing the only item in the list...\n\n");
-		list->headIndex = -1;
-		list->currentIndex = -1;
-		list->tailIndex = -1;
+		list->head = NULL;
+		list->current = NULL;
+		list->tail = NULL;
 	} else if (CURRENT_NODE_IS_HEAD) {
 		printf("The current node is the head, removing it...\n\n")
-		int newHeadIndex = node.nextIndex;
-		NODE newHead = nodePool[newHeadIndex];
-		newHead.prevIndex = -1;
-		
-		listHeads[list->headIndex] = newHeadIndex;
-		list->currentIndex = newHeadIndex;
+		list->head = list->head->next;
+		list->head->previous = NULL;
+		list->current = list->head;
 	} else if (CURRENT_NODE_IS_TAIL) {
 		printf("The current node is the tail, removing it...\n\n");
 		return ListTrim(list);
 	} else {
 		printf("Removing the current item...\n\n");
-		int preNodeIndex = node.prevIndex;
-		int postNodeIndex = node.nextIndex;
-		NODE preNode = nodePool[preNodeIndex];
-		NODE postNode = nodePool[postNodeIndex];
-
-		preNode.nextIndex = postNodeIndex;
-		postNode.prevIndex = preNodeIndex;
-
-		nodePool[preNodeIndex] = preNode;
-		nodePool[postNodeIndex] = postNode;
+		NODE *removedNode = list->current;
+		NODE *preRemovedNode = list->current->previous;
+		NODE *postRemovedNode = list->current->next;
+		preRemovedNode->next = postRemovedNode;
+		postRemovedNode->previous = preRemovedNode;
 	}
 
+	list->currentIsBeyond = 0;
 	list->size--;
+
+	availableNodeArr[numNodesAvailable] = nodeIndex;
+	numNodesAvailable++;
 	return item;
 }
 
@@ -327,20 +338,13 @@ void *ListRemove(LIST *list) {
  * List2 no longer exists after the operation.
  */
 void ListConcat(LIST *list1, LIST *list2) {
-	int currentIndex2 = listHeads[list2->headIndex];
-	while (currentIndex2 < NODE_POOL_SIZE) {
-		NODE current2 = nodePool[currentIndex2]; 
-		int currentTailIndex1 = list1->tailIndex;
-		NODE currentTail1 = nodePool[currentTailIndex1];
+	list2->head->previous = list1->tail;
+	list1->tail->next = list2->head;
+	list1->size += list2->size;
 
-		currentTail1.nextIndex = currentIndex2;
-		current2.prevIndex = currentTailIndex1;
-
-		list1.size++;
-		list1.tailIndex = currentIndex2;
-		currentIndex2 = current2.next;
-	}
-	free(list2);
+	ptrdiff_t listIndex2 = list2 - listPool;
+	availableListArr[numListsAvailable] = listIndex2;
+	numListsAvailable++;
 }
 
 /** 
@@ -349,12 +353,16 @@ void ListConcat(LIST *list1, LIST *list2) {
  * It should be invoked (within ListFree) as: (* itemFree)(itemToBeFreed);
  */
 void ListFree(LIST *list, void (*itemFree)(void *)) {
-	int currentIndex = listHeads[list->headIndex];
-	for (int i = 0; i < list->size; i++) {
-		(* itemFree)(nodePool[currentIndex].item);
-		currentIndex = nodePool[currentIndex].nextIndex;
+	NODE *nodeToDelete = list->head;
+	while (nodeToDelete != NULL) {
+		(* itemFree)(nodeToDelete->item);
+
+		ptrdiff_t nodeIndex = nodeToDelete - nodePool;
+		availableNodeArr[numNodesAvailable] = nodeIndex;
+		numNodesAvailable++;
+
+		nodeToDelete = nodeToDelete->next;
 	}
-	free(list);
 }
 
 /**
@@ -366,16 +374,17 @@ void *ListTrim(LIST *list) {
 		return NULL;
 	}
 
-	NODE node = nodePool[list->tailIndex];
-	void *item = node.item;
+	void *item = list->tail->item;
+	ptrdiff_t nodeIndex = list->tail - nodePool;
+	availableNodeArr[numNodesAvailable] = nodeIndex;
+	numNodesAvailable++;
 
-	int newTailIndex = node.prevIndex;
-	NODE newTail = nodePool[newTail];
-	newTail.nextIndex = NODE_POOL_SIZE;
-
-	list->tailIndex = newTailIndex;
-	list->currentIndex = newTailIndex;
+	NODE *newTail = list->tail->previous;
+	newTail->next = NULL;
+	list->tail = newTail;
 	list->size--;
+	list->current = list->tail;
+	list->currentIsBeyond = 0;
 
 	return item;
 }
@@ -390,15 +399,17 @@ void *ListTrim(LIST *list) {
  * If no match is found, the current pointer is left beyond the end of the list and a NULL pointer is returned.
  */
 void *ListSearch(LIST *list, int (*comparator)(void *, void *), void *comparisonArg) {
-	int currentIndex = listHeads[list->headIndex];
-	for (int i = 0; i < list->size; i++) {
+	NODE *searchNode = list->current;
+
+	while (searchNode != NULL) {
 		if ((* comparator)(nodePool[currentIndex].item, comparisonArg) == 1) {
-			list->current = currentIndex;
-			return nodePool[currentIndex].item;
+			list->current = searchNode;
+			return list->current->item;
 		}
-		currentIndex = nodePool[currentIndex].nextIndex;
 	}
-	list->current = NODE_POOL_SIZE;
+
+	list->current = NULL;
+	list->currentIsBeyond = 1;
 	return NULL;
 }
 
@@ -420,38 +431,36 @@ static void *getNodeItemFromPoolByIndex(int index) {
 static void addItemToEmptyList(LIST *list, void *item) {
 	NODE node;
 	node.item = item;
-	node.prevIndex = -1;
-	node.nextIndex = -1;
-	nodePool[nodesUsed] = node;
+	node.previous = NULL;
+	node.next = NULL;
 
-	list->currentIndex = nodesUsed;
-	list->tailIndex = nodesUsed;
-	listHeads[list->headIndex] = nodesUsed;
+	int nodeIndex = availableNodeArr[numNodesAvailable - 1];
+	nodePool[nodeIndex] = node;
+	numNodesAvailable--;
+
+	list->current = &nodePool[nodeIndex];
+	list->head = &nodePool[nodeIndex];
+	list->tail = &nodePool[nodeIndex];
 	list->size++;
-	nodesUsed++;
 }
 
 /**
  * Add item between two index items of a non-empty list
  */
-static void addItemBetweenTwoOthers(LIST *list, void *item, int pre, int post) {
+static void addItemBetweenTwoOthers(LIST *list, void *item, NODE *pre, NODE *post) {
 	NODE node;
 	node.item = item;
-	node.prevIndex = pre;
-	node.nextIndex = post;
+	node.prev = pre;
+	node.next = post;
 
-	NODE preNode = nodePool[pre];
-	NODE postNode = nodePool[post];
+	int nodeIndex = availableNodeArr[numNodesAvailable - 1];
+	nodePool[nodeIndex] = node;
+	numNodesAvailable--;
 	
-	preNode.nextIndex = nodesUsed;
-	postNode.prevIndex = nodesUsed;
+	pre->next = &nodePool[nodeIndex];
+	post->previous = &nodePool[nodeIndex];
 
-	nodePool[pre] = preNode;
-	nodePool[post] = postNode;
-
-	list->currentIndex = nodesUsed;
+	list->current = &nodePool[nodeIndex];
 	list->size++;
-	
-	nodePool[nodesUsed] = node;
-	nodesUsed++;
+	list->currentIsBeyond = 0;
 }

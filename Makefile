@@ -1,3 +1,12 @@
-CFLAGS=-g -Wall -Wextra -I.
-list: list_testdriver.c list.c
-	gcc -o list_testdriver list_testdriver.c list.c ${CFLAGS}.
+CC = gcc
+CFLAGS = -g -Wall -Wextra -I.
+PROG = list_test
+OBJS = list.o list_testdriver.o
+
+run: $(OBJS)
+	$(CC) $(CFLAGS) -o $(PROG) $(OBJS)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $*.c
+
+list.o: list.h

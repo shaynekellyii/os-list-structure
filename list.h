@@ -2,24 +2,19 @@
 #define _LIST_H_
 
 /**
- * Constants
- */
-#define NODE_POOL_SIZE 100
-#define LIST_HEAD_SIZE 10
-
-/**
  * Structs
  */
 typedef struct NODE {
 	void *item;
-	int prevIndex;
-	int nextIndex;
+	NODE *previous;
+	NODE *next;
 } NODE;
 typedef struct LIST {
-	int headIndex; // Location in heads array
-	int currentIndex; // Location of current node in node pool array
-	int tailIndex; // Location of tail node in node pool array 
+	NODE *current; // Location of current node in node pool array
+	NODE *head;
+	NODE *tail; // Location of tail node in node pool array 
 	int size;
+	int currentIsBeyond; // 0 if current is not beyond the list boundaries, -1 if before, 1 if after
 } LIST;
 
 /**
