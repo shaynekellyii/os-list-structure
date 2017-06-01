@@ -238,7 +238,7 @@ int ListInsert(LIST *list, void *item) {
 int ListAppend(LIST *list, void *item) {
 	NODE node;
 
-	if (NODE_POOL_FULL) {
+	if (list == NULL || item == NULL || NODE_POOL_FULL) {
 		return -1;
 	}
 	if (LIST_IS_EMPTY) {
@@ -270,7 +270,7 @@ int ListAppend(LIST *list, void *item) {
 int ListPrepend(LIST *list, void *item) {
 	NODE node;
 
-	if (NODE_POOL_FULL) {
+	if (list == NULL || item == NULL || NODE_POOL_FULL) {
 		return -1;
 	}
 
@@ -300,7 +300,7 @@ int ListPrepend(LIST *list, void *item) {
  * Make the next item the current one.
  */
 void *ListRemove(LIST *list) {
-	if (LIST_IS_EMPTY || CURRENT_NODE_BEYOND_START || CURRENT_NODE_BEYOND_END) {
+	if (list == NULL || LIST_IS_EMPTY || CURRENT_NODE_BEYOND_START || CURRENT_NODE_BEYOND_END) {
 		return NULL;
 	}
 
@@ -338,6 +338,10 @@ void *ListRemove(LIST *list) {
  * List2 no longer exists after the operation.
  */
 void ListConcat(LIST *list1, LIST *list2) {
+	if (list1 == NULL || list2 == NULL) {
+		return;
+	}
+
 	list2->head->previous = list1->tail;
 	list1->tail->next = list2->head;
 	list1->size += list2->size;
@@ -380,7 +384,7 @@ void ListFree(LIST *list, void (*itemFree)(void *)) {
  * Make the new last item the current one.
  */
 void *ListTrim(LIST *list) {
-	if (LIST_IS_EMPTY) {
+	if (list == NULL || LIST_IS_EMPTY) {
 		return NULL;
 	}
 
@@ -415,8 +419,11 @@ void *ListTrim(LIST *list) {
  * If no match is found, the current pointer is left beyond the end of the list and a NULL pointer is returned.
  */
 void *ListSearch(LIST *list, int (*comparator)(void *, void *), void *comparisonArg) {
-	NODE *searchNode = list->current;
+	if (list == NULL || comparator == NULL) {
+		return NULL;
+	}
 
+	NODE *searchNode = list->current;
 	while (searchNode != NULL) {
 		if ((* comparator)(searchNode->item, comparisonArg) == 1) {
 			list->current = searchNode;
