@@ -10,3 +10,6 @@ run: $(OBJS)
 	$(CC) $(CFLAGS) -c $*.c
 
 list.o: list.h
+
+clean:
+	rm *.o

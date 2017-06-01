@@ -10,6 +10,7 @@
 #include "list.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 /***************************************************************
  * Defines                                                     *
@@ -22,8 +23,8 @@
 #define LIST_IS_EMPTY				(list->size == 0)
 #define CURRENT_NODE_BEYOND_START	(list->currentIsBeyond == -1)
 #define CURRENT_NODE_BEYOND_END		(list->currentIsBeyond == 1)
-#define CURRENT_NODE_IS_HEAD		(list->currentIndex == list->headIndex])
-#define CURRENT_NODE_IS_TAIL		(list->currentIndex == list->tailIndex)
+#define CURRENT_NODE_IS_HEAD		(list->current == list->head)
+#define CURRENT_NODE_IS_TAIL		(list->current == list->tail)
 
 /***************************************************************
  * Statics                                                     *
@@ -36,9 +37,8 @@ static int numNodesAvailable = NODE_POOL_SIZE;
 static int numListsAvailable = LIST_POOL_SIZE;
 static int initialisationFlag = 0;
 
-static void *getNodeItemFromPoolByIndex(int index);
 static void addItemToEmptyList(LIST *list, void *item);
-static void addItemBetweenTwoOthers(LIST *list, void *item, int pre, int post);
+static void addItemBetweenTwoOthers(LIST *list, void *item, NODE *pre, NODE *post);
 
 /***************************************************************
  * Global Functions                                            *
@@ -53,31 +53,30 @@ LIST *ListCreate(void) {
 	/* Set all of the indices of the available nodes when the first list is created */
 	if (!initialisationFlag) {
 		for (int i = 0; i < NODE_POOL_SIZE; i++) {
-			availableNodes[i] = i;
+			availableNodeArr[i] = i;
 		}
 		for (int i = 0; i < LIST_POOL_SIZE; i++) {
-			availableLists[i] = i;
+			availableListArr[i] = i;
 		}
 		initialisationFlag = 1;
 	}
 
-	printf("Creating a new empty list...\n\n");
-
-	if (NODE_POOL_FULL || LIST_POOL_FULL) {
-		printf("There is no space for the list... returning NULL\n\n");
+	/* Ensure there is space in the list pool */
+	if (LIST_POOL_FULL) {
 		return NULL;
 	}
 
+	/* Set parameters for a new list */
 	list.current = NULL;
 	list.head = NULL;
 	list.tail = NULL;
 	list.size = 0;
 	list.currentIsBeyond = 0;
 
+	/* Add local new list to the list pool and return it */
 	int listIndex = availableListArr[numListsAvailable - 1];
 	listPool[listIndex] = list;
 	numListsAvailable--;
-
 	return &listPool[listIndex];
 }
 
@@ -101,7 +100,7 @@ void *ListFirst(LIST *list) {
 
 	printf("Setting the current item to the head\n");
 	list->current = list->head;
-	printf("Returning the first item, it has address %p\n\n", list->current->item;
+	printf("Returning the first item, it has address %p\n\n", list->current->item);
 	return list->current->item;
 }
 
@@ -191,7 +190,7 @@ int ListAdd(LIST *list, void *item) {
 		ListAppend(list, item);
 	} else {
 		printf("Adding item after the current item...\n\n");
-		addItemBetweenTwoOthers(list, item, list->current, list->current->next;
+		addItemBetweenTwoOthers(list, item, list->current, list->current->next);
 	}
 	return 0;
 }
@@ -217,7 +216,7 @@ int ListInsert(LIST *list, void *item) {
 		ListAppend(list, item);
 	} else {
 		printf("Adding item after the current item...\n\n");
-		addItemBetweenTwoOthers(list, item, nodePool[list->currentIndex].prevIndex, list->currentIndex);
+		addItemBetweenTwoOthers(list, item, list->current->previous, list->current);
 	}
 	return 0;
 }
@@ -241,10 +240,10 @@ int ListAppend(LIST *list, void *item) {
 	printf("Adding item to the end of the list...\n\n");
 
 	node.item = item;
-	node.prev = list->tail;
+	node.previous = list->tail;
 	node.next = NULL;
 	
-	int nodeIndex = availableNodeArr[numNodesAvailable - 1]
+	int nodeIndex = availableNodeArr[numNodesAvailable - 1];
 	nodePool[nodeIndex] = node;
 	numNodesAvailable--;
 
@@ -275,14 +274,14 @@ int ListPrepend(LIST *list, void *item) {
 	printf("Adding item to the start of the list...\n\n");
 
 	node.item = item;
-	node.prev = NULL;
+	node.previous = NULL;
 	node.next = list->head;
 
 	int nodeIndex = availableNodeArr[numNodesAvailable - 1];
 	nodePool[nodeIndex] = node;
 	numNodesAvailable--;
 
-	list->head->prev = &nodePool[nodeIndex];
+	list->head->previous = &nodePool[nodeIndex];
 	list->head = &nodePool[nodeIndex];
 	list->size++;
 	list->currentIsBeyond = 0;
@@ -308,7 +307,7 @@ void *ListRemove(LIST *list) {
 		list->current = NULL;
 		list->tail = NULL;
 	} else if (CURRENT_NODE_IS_HEAD) {
-		printf("The current node is the head, removing it...\n\n")
+		printf("The current node is the head, removing it...\n\n");
 		list->head = list->head->next;
 		list->head->previous = NULL;
 		list->current = list->head;
@@ -317,7 +316,6 @@ void *ListRemove(LIST *list) {
 		return ListTrim(list);
 	} else {
 		printf("Removing the current item...\n\n");
-		NODE *removedNode = list->current;
 		NODE *preRemovedNode = list->current->previous;
 		NODE *postRemovedNode = list->current->next;
 		preRemovedNode->next = postRemovedNode;
@@ -402,7 +400,7 @@ void *ListSearch(LIST *list, int (*comparator)(void *, void *), void *comparison
 	NODE *searchNode = list->current;
 
 	while (searchNode != NULL) {
-		if ((* comparator)(nodePool[currentIndex].item, comparisonArg) == 1) {
+		if ((* comparator)(searchNode->item, comparisonArg) == 1) {
 			list->current = searchNode;
 			return list->current->item;
 		}
@@ -417,13 +415,6 @@ void *ListSearch(LIST *list, int (*comparator)(void *, void *), void *comparison
 /***************************************************************
  * Static Functions                                            *
  ***************************************************************/
-
-/**
- * Given the index of the node in the pool, returns the pointer to the void data item at that node
- */
-static void *getNodeItemFromPoolByIndex(int index) {
-	return nodePool[index].item;
-}
 
 /**
  * Add item to empty list
@@ -450,7 +441,7 @@ static void addItemToEmptyList(LIST *list, void *item) {
 static void addItemBetweenTwoOthers(LIST *list, void *item, NODE *pre, NODE *post) {
 	NODE node;
 	node.item = item;
-	node.prev = pre;
+	node.previous = pre;
 	node.next = post;
 
 	int nodeIndex = availableNodeArr[numNodesAvailable - 1];

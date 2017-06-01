@@ -6,8 +6,8 @@
  */
 typedef struct NODE {
 	void *item;
-	NODE *previous;
-	NODE *next;
+	struct NODE *previous;
+	struct NODE *next;
 } NODE;
 typedef struct LIST {
 	NODE *current; // Location of current node in node pool array
