@@ -19,6 +19,8 @@
 static void ListCreateTest();
 static void ListCountTest();
 static void ListFirstTest();
+static void ListLastTest();
+
 static void ListTrimTest();
 
 /***************************************************************
@@ -32,6 +34,7 @@ int main(void) {
 	ListCreateTest();
 	ListCountTest();
 	ListFirstTest();
+	ListLastTest();
 
 	ListTrimTest();
 
@@ -49,7 +52,6 @@ int main(void) {
  * ListCreate test cases:
  * 1. Create a list, returns pointer to empty list, check list parameters
  * 2. Fill up all list head space, returns NULL
- * Also checks: ListFree()
  */
 static void ListCreateTest() {
 	LIST *listArr[11];
@@ -88,7 +90,6 @@ static void ListCreateTest() {
 /**
  * 1. Create a list with 100 items (also tests ListAdd()).
  * 2. Delete all items and check count.
- * Also checks: ListAdd(), ListTrim(), ListFree()
  */
 static void ListCountTest() {
 	LIST *list = ListCreate();
@@ -118,7 +119,6 @@ static void ListCountTest() {
  * 1. Check first item of empty list returns NULL.
  * 2. Check first item of list with one item.
  * 3. Check first item of list with multiple items.
- * Also checks: ListCurrent(), ListFree()
  */
 static void ListFirstTest() {
 	LIST *list = ListCreate();
@@ -151,7 +151,42 @@ static void ListFirstTest() {
 	printf("ListFirst tests passed. 6 assertions passed.\n");
 }
 
+/**
+ * 1. Check last item of empty list returns NULL.
+ * 2. Check last item of list with one item.
+ * 3. Check last item of list with multiple items.
+ */
+static void ListLastTest() {
+	LIST *list = ListCreate();
 
+	/* Test Case 1 */
+	assert(ListLast(list) == NULL
+		&& "FAIL: Checking last item of an empty list did not return NULL\n");
+	assert(list->current == NULL
+		&& "FAIL: Checking last item modified the current item of an empty list\n");
+
+	/* Test Case 2 */
+	char testChar[3];
+	testChar[0] = 'a';
+	ListAdd(list, (void *)&testChar[0]);
+	assert(ListLast(list) == &testChar[0]
+		&& "FAIL: Checking last item of a list with 1 item\n");
+	assert(list->current->item == &testChar[0]
+		&& "FAIL: The current item was not set to the last item for a list with 1 item\n");
+
+	/* Test Case 3 */
+	testChar[1] = 'b';
+	ListAdd(list, (void *)&testChar[1]);
+	assert(ListLast(list) == &testChar[1]
+		&& "FAIL: Checking first item of a list with multiple items\n");
+	assert(list->current->item == &testChar[1]
+		&& "FAIL: The current item was not set to the first item for a list with multiple items\n");
+
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("ListLast tests passed. 6 assertions passed.\n");
+}
 
 
 

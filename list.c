@@ -111,13 +111,10 @@ void *ListFirst(LIST *list) {
  */
 void *ListLast(LIST *list) {
 	if (LIST_IS_EMPTY) {
-		printf("The list is empty and has no last item, returning NULL\n\n");
 		return NULL;
 	}
 
-	printf("Setting the current item to the tail\n");
 	list->current = list->tail;
-	printf("Returning the last item, it has address %p\n\n", list->current->item);
 	return list->current->item;
 }
 
