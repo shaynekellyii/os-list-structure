@@ -23,6 +23,7 @@ static void ListLastTest();
 static void ListNextTest();
 static void ListPrevTest();
 static void ListCurrTest();
+static void ListAddTest();
 
 static void ListTrimTest();
 
@@ -41,6 +42,7 @@ int main(void) {
 	ListNextTest();
 	ListPrevTest();
 	ListCurrTest();
+	ListAddTest();
 
 	ListTrimTest();
 
@@ -482,11 +484,95 @@ static void ListCurrTest() {
 
 	/* Test Case 10 */
 	assert(ListPrev(NULL) == NULL
-		&& "FAIL: Checking current item of a NULL list returned non-NULL");
+		&& "FAIL: Checking current item of a NULL list returned non-NULL\n");
 
 	/* Cleanup */
 	ListFree(list, NULL);
 	printf("ListCurr tests passed. 10 assertions passed.\n");
+}
+
+/**
+ * (Normal functionality tested in other tests)
+ * 1. Add null item
+ * 2. Add item to null list
+ * 3. Add item after node pool full
+ * 4. Add item to empty list, check list params
+ * 5. Add item to list with one item, check list params
+ * 6. Add item to list with multiple items, check list params
+ */
+static void ListAddTest() {
+	LIST *list = ListCreate();
+	float testFloat[100] = {1.0};
+
+	/* Test Case 1 */
+	assert(ListAdd(list, NULL) == -1
+		&& "FAIL: Adding NULL item did not return -1\n");
+
+	/* Test Case 2 */
+	assert(ListAdd(NULL, &testFloat[0]) == -1
+		&& "FAIL: Adding item to NULL list did not return -1\n");
+
+	/* Test Case 3 */
+	for (int i = 0; i < 100; i++) {
+		ListAdd(list, &testFloat[i]);
+	}
+	assert(ListAdd(NULL, &testFloat[0]) == -1
+		&& "FAIL: Adding item after node pool full did not return -1\n");
+	ListFree(list, NULL);
+	list = ListCreate();
+
+	/* Test Case 4 */
+	ListAdd(list, &testFloat[0]);
+	assert(ListCurr(list) == &testFloat[0]
+		&& "FAIL: The list's current item is not the added item\n");
+	assert(list->size == 1
+		&& "FAIL: The list's size is wrong for a list with a single item\n");
+	assert(list->head->item == &testFloat[0]
+		&& "FAIL: The list's head is wrong for a list with a single item\n");
+	assert(list->tail->item == &testFloat[0]
+		&& "FAIL: The list's tail is wrong for a list with a single item\n");
+	assert(list->current->next == NULL
+		&& "FAIL: The list's added item's next pointer is wrong\n");
+	assert(list->current->previous == NULL
+		&& "FAIL: The list's added item's previous pointer is wrong\n");
+
+	/* Test Case 5 */
+	ListAdd(list, &testFloat[1]);
+	assert(ListCurr(list) == &testFloat[1]
+		&& "FAIL: The list's current item is not the added item\n");
+	assert(list->size == 2
+		&& "FAIL: The list's size is wrong for a list with two items\n");
+	assert(list->head->item == &testFloat[0]
+		&& "FAIL: The list's head is wrong for a list with two items\n");
+	assert(list->tail->item == &testFloat[1]
+		&& "FAIL: The list's tail is wrong for a list with a two items\n");
+	assert(list->current->next == NULL
+		&& "FAIL: The list's added item's next pointer is wrong\n");
+	assert(list->current->previous->item == &testFloat[0]
+		&& "FAIL: The list's added item's previous pointer is wrong\n");
+	assert(list->head->next->item == &testFloat[1]
+		&& "FAIL: The list head's next pointer is wrong\n");
+
+	/* Test Case 6 */
+	ListAdd(list, &testFloat[2]);
+	assert(ListCurr(list) == &testFloat[2]
+		&& "FAIL: The list's current item is not the added item\n");
+	assert(list->size == 3
+		&& "FAIL: The list's size is wrong for a list with three items\n");
+	assert(list->head->item == &testFloat[0]
+		&& "FAIL: The list's head is wrong for a list with three items\n");
+	assert(list->tail->item == &testFloat[2]
+		&& "FAIL: The list's tail is wrong for a list with a three items\n");
+	assert(list->current->next == NULL
+		&& "FAIL: The list's added item's next pointer is wrong\n");
+	assert(list->current->previous->item == &testFloat[1]
+		&& "FAIL: The list's added item's previous pointer is wrong\n");
+	assert(list->tail->previous->next->item == &testFloat[2]
+		&& "FAIL: The list item before the added item did not update its next pointer\n");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("ListAdd tests passed. 23 assertions passed.\n");
 }
 
 /**

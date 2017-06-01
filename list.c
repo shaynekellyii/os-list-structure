@@ -188,7 +188,7 @@ void *ListCurr(LIST *list) {
  * Returns 0 if successful, -1 if failed.
  */
 int ListAdd(LIST *list, void *item) {
-	if (NODE_POOL_FULL) {
+	if (list == NULL || item == NULL || NODE_POOL_FULL) {
 		return -1;
 	}
 

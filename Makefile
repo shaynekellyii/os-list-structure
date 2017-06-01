@@ -12,4 +12,4 @@ run: $(OBJS)
 list.o: list.h
 
 clean:
-	rm *.o
+	rm *.o list_test
