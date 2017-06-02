@@ -526,7 +526,6 @@ static void ListCurrTest() {
  * 5. Add item to list with one item, check list params
  * 6. Add item to list with multiple items, check list params
  * 7. Add 5 items, check all items linked correctly
- * TODO: Add more cases if time (different current pointers).
  */
 static void ListAddTest() {
 	LIST *list = ListCreate();
@@ -627,7 +626,6 @@ static void ListAddTest() {
  * 4. Insert item to empty list, check list params
  * 5. Insert item to list with one item, check list params
  * 6. Insert item to list with multiple items, check list params
- * TODO: Add more cases if time.
  */
 static void ListInsertTest() {
 	LIST *list = ListCreate();
