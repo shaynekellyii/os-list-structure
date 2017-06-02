@@ -254,8 +254,12 @@ int ListAppend(LIST *list, void *item) {
 	nodePool[nodeIndex] = node;
 	numNodesAvailable--;
 
+	if (list->size == 1) {
+		list->head->next = &nodePool[nodeIndex];
+	}
 	list->tail->next = &nodePool[nodeIndex];
-	list->tail = &nodePool[nodeIndex];
+	list->tail->next->previous = list->tail;
+	list->tail = list->tail->next;
 	list->current = list->tail;
 	list->size++;
 	list->currentIsBeyond = 0;
@@ -344,13 +348,30 @@ void ListConcat(LIST *list1, LIST *list2) {
 		return;
 	}
 
-	list2->head->previous = list1->tail;
-	list1->tail->next = list2->head;
+	if (list1->size == 1 && list2->size == 1) {
+		list1->head->next = list2->head;
+		list1->tail = list2->head;
+		list1->tail->previous = list1->head;
+	} else if (list1->size == 1 && list2->size > 1) {
+		list1->head->next = list2->head;
+		list1->tail = list2->tail;
+		list2->head->previous = list1->tail;
+	} else if (list1->size > 1 && list2->size >= 1) {
+		list1->tail->next = list2->head;
+		list2->head->previous = list1->tail;
+		list1->tail = list2->tail;
+	} else if (list1->size == 0 && list2->size > 0) {
+		list1->head = list2->head;
+		list1->tail = list2->tail;
+		list1->current = list2->current;
+		list1->currentIsBeyond = 0;
+	}
 	list1->size += list2->size;
 
 	ptrdiff_t listIndex2 = list2 - listPool;
 	availableListArr[numListsAvailable] = listIndex2;
 	numListsAvailable++;
+	list2 = NULL;
 }
 
 /** 
@@ -373,8 +394,18 @@ void ListFree(LIST *list, void (*itemFree)(void *)) {
 		availableNodeArr[numNodesAvailable] = nodeIndex;
 		numNodesAvailable++;
 
+		NODE *oldNode = nodeToDelete;
 		nodeToDelete = nodeToDelete->next;
+		oldNode->item = NULL;
+		oldNode->previous = NULL;
+		oldNode->next = NULL;
 	}
+
+	list->current = NULL;
+	list->head = NULL;
+	list->tail = NULL;
+	list->size = 0;
+	list->currentIsBeyond = 0;
 
 	ptrdiff_t listIndex = list - listPool;
 	availableListArr[numListsAvailable] = listIndex;
@@ -396,9 +427,8 @@ void *ListTrim(LIST *list) {
 	numNodesAvailable++;
 
 	if (list->size > 1) {
-		NODE *newTail = list->tail->previous;
-		newTail->next = NULL;
-		list->tail = newTail;
+		list->tail = list->tail->previous;
+		list->tail->next = NULL;
 		list->current = list->tail;
 	} else {
 		list->tail = NULL;

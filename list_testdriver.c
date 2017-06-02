@@ -28,7 +28,7 @@ static void ListInsertTest();
 static void ListAppendTest();
 static void ListPrependTest();
 static void ListRemoveTest();
-
+static void ListConcatTest();
 static void ListTrimTest();
 
 /***************************************************************
@@ -57,7 +57,7 @@ int main(void) {
 	ListAppendTest();
 	ListPrependTest();
 	ListRemoveTest();
-
+	ListConcatTest();
 	ListTrimTest();
 
 	printf("------------------------------------------------------\n\n");
@@ -515,6 +515,7 @@ static void ListCurrTest() {
  * 4. Add item to empty list, check list params
  * 5. Add item to list with one item, check list params
  * 6. Add item to list with multiple items, check list params
+ * 7. Add 5 items, check all items linked correctly
  * TODO: Add more cases if time (different current pointers).
  */
 static void ListAddTest() {
@@ -586,6 +587,23 @@ static void ListAddTest() {
 		&& "FAIL: The list's added item's previous pointer is wrong\n");
 	assert(list->tail->previous->next->item == &testFloat[2]
 		&& "FAIL: The list item before the added item did not update its next pointer\n");
+
+	/* Test Case 7 */
+	ListFree(list, NULL);
+	list = ListCreate();
+	for (int i = 0; i < 5; i++) ListAdd(list, &testFloat[i]);
+	NODE *node = list->head;
+	for (int i = 0; i < 5; i++) {
+		assert(node->item == &testFloat[i]
+			&& "FAIL: The list was not linked correctly");
+		node = node->next;
+	}
+	node = list->tail;
+	for (int i = 5; i > 0; i--) {
+		assert(node->item == &testFloat[i - 1]
+			&& "FAIL: The list was not linked correctly");
+		node = node->previous;
+	}
 
 	/* Cleanup */
 	ListFree(list, NULL);
@@ -1005,16 +1023,511 @@ static void ListRemoveTest() {
 }
 
 /**
- * 1. Trim list with one item.
+ * 1. List1 NULL
+ * 2. List2 NULL
+ * 3. List1 empty, List2 empty
+ * 4. List1 empty, List2 1 item
+ * 5. List1 empty, List2 2 items
+ * 6. List1 empty, List2 3 items
+ * 7. List1 1 item, List2 empty
+ * 8. List1 1 item, List2 1 item
+ * 9. List1 1 item, List2 2 items
+ * 10. List1 1 item, List2 3 items
+ * 11. List1 2 items, List2 empty
+ * 12. List1 2 items, List2 1 item
+ * 13. List1 2 items, List2 2 items
+ * 14. List1 2 items, List2 3 items
+ * 15. List1 3 items, List2 empty
+ * 16. List1 3 items, List2 1 item
+ * 17. List1 3 items, List2 2 items
+ * 18. List1 3 items, List2 3 items
+ */
+static void ListConcatTest() {
+	LIST *list1 = NULL;
+	LIST *list2 = ListCreate();
+
+	/* Test Case 1 */
+	LIST *listAddr = list2;
+	ListConcat(list1, list2);
+	assert(list1 == NULL
+		&& "FAIL: List1 was modified even though it was NULL");
+	assert(list2 == listAddr
+		&& "FAIL: List2 was modified even though list1 was NULL");
+
+	/* Test Case 2 */
+	list1 = list2;
+	list2 = NULL;
+	ListConcat(list1, list2);
+	assert(list1 == listAddr
+		&& "FAIL: List1 was modified even though list2 was NULL");
+	assert(list2 == NULL
+		&& "FAIL: List2 was modified even though it was NULL");
+
+	/* Test Case 3 */
+	list2 = ListCreate();
+	ListConcat(list1, list2);
+	assert(list1->size == 0
+		&& "FAIL: Size was non-zero when both lists were empty");
+	assert(list1->current == NULL
+		&& "FAIL: Current ptr was non-NULL when both lists were empty");
+	assert(list1->head == NULL
+		&& "FAIL: Head ptr was non-NULL when both lists were empty");
+	assert(list1->tail == NULL
+		&& "FAIL: Tail ptr was non-NULL when both lists were empty");
+
+	/* Test Case 4 */
+	int testInt2[5] = {0};
+	ListAdd(list2, &testInt2[0]);
+	ListConcat(list1, list2);
+	assert(list1->size == 1
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt2[0]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt2[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[0]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+
+	/* Test Case 5 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListConcat(list1, list2);
+	assert(list1->size == 2
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt2[1]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt2[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[1]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+
+	/* Test Case 6 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListAdd(list2, &testInt2[2]);
+	ListConcat(list1, list2);
+	assert(list1->size == 3
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt2[2]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt2[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[2]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	assert(list1->head->next->item == &testInt2[1]
+		&& "FAIL: Head next ptr was wrong after concatenating lists");
+	assert(list1->tail->previous->item == &testInt2[1]
+		&& "FAIL: Tail prev ptr was wrong after concatenating lists");
+
+	/* Test Case 7 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	int testInt1[5] = {0};
+	ListAdd(list1, &testInt1[0]);
+	ListConcat(list1, list2);
+	assert(list1->size == 1
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[0]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt1[0]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+
+	/* Test Case 8 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list2, &testInt2[0]);
+	ListConcat(list1, list2);
+	assert(list1->size == 2
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[0]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[0]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+
+	/* Test Case 9 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListConcat(list1, list2);
+	assert(list1->size == 3
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[0]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[1]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	NODE *testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i == 0) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-1]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Test Case 10 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListAdd(list2, &testInt2[2]);
+	ListConcat(list1, list2);
+	assert(list1->size == 4
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[0]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[2]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i == 0) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-1]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Test Case 11 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListConcat(list1, list2);
+	assert(list1->size == 2
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[1]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt1[1]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+
+	/* Test Case 12 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListAdd(list2, &testInt2[0]);
+	ListConcat(list1, list2);
+	assert(list1->size == 3
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[1]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[0]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i <= 1) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-2]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Test Case 13 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListConcat(list1, list2);
+	assert(list1->size == 4
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[1]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[1]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i <= 1) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-2]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Test Case 14 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListAdd(list2, &testInt2[2]);
+	ListConcat(list1, list2);
+	assert(list1->size == 5
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[1]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[2]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i <= 1) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-2]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Test Case 15 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListAdd(list1, &testInt1[2]);
+	ListConcat(list1, list2);
+	assert(list1->size == 3
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[2]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt1[2]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		assert(testNode->item == &testInt1[i]
+			&& "FAIL: Nodes in incorrect order after concatenating lists");
+		testNode = testNode->next;
+	}
+
+	/* Test Case 16 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListAdd(list1, &testInt1[2]);
+	ListAdd(list2, &testInt2[0]);
+	ListConcat(list1, list2);
+	assert(list1->size == 4
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[2]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[0]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i <= 2) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-3]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Test Case 17 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListAdd(list1, &testInt1[2]);
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListConcat(list1, list2);
+	assert(list1->size == 5
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[2]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[1]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i <= 2) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-3]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Test Case 18 */
+	ListFree(list1, NULL);
+	list1 = ListCreate();
+	list2 = ListCreate();
+	ListAdd(list1, &testInt1[0]);
+	ListAdd(list1, &testInt1[1]);
+	ListAdd(list1, &testInt1[2]);
+	ListAdd(list2, &testInt2[0]);
+	ListAdd(list2, &testInt2[1]);
+	ListAdd(list2, &testInt2[2]);
+	ListConcat(list1, list2);
+	assert(list1->size == 6
+		&& "FAIL: Size was wrong after concatenating lists");
+	assert(list1->current->item == &testInt1[2]
+		&& "FAIL: Current ptr was wrong after concatenating lists");
+	assert(list1->head->item == &testInt1[0]
+		&& "FAIL: Head ptr was wrong after concatenating lists");
+	assert(list1->tail->item == &testInt2[2]
+		&& "FAIL: Tail ptr was wrong after concatenating lists");
+	testNode = list1->head;
+	for (int i = 0; i < list1->size; i++) {
+		if (i <= 2) {
+			assert(testNode->item == &testInt1[i]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		} else {
+			assert(testNode->item == &testInt2[i-3]
+				&& "FAIL: Nodes in incorrect order after concatenating lists");
+		}
+		testNode = testNode->next;
+	}
+
+	/* Cleanup */
+	ListFree(list1, NULL);
+	ListFree(list2, NULL);
+	printf("| ListFree    |      18      |      107     |  PASS  |\n");
+}
+
+/**
+ * 1. Trim NULL list.
+ * 2. Trim empty list.
+ * 3. Trim list with one item.
+ * 4. Trim list with two items.
+ * 5. Trim list with three items.
+ * 6. Trim list with four items.
  */
 static void ListTrimTest() {
-	LIST *list = ListCreate();
-	int *listItem = (int *)malloc(sizeof(int));
-	*listItem = 0;
-	ListAdd(list, (void *)listItem);
-	ListTrim(list);
-	assert(list->size == 0);
-	assert(list->current == NULL);
-	assert(list->head == NULL);
-	assert(list->tail == NULL);
+	LIST *list = NULL;
+
+	/* Test Case 1 */
+	assert(ListTrim(list) == NULL
+		&& "FAIL: Trimming NULL list returned non-NULL");
+	assert(list == NULL
+		&& "FAIL: Trimming NULL list set it to non-NULL");
+
+	/* Test Case 2 */
+	list = ListCreate();
+	assert(ListTrim(list) == NULL
+		&& "FAIL: Trimming empty list returned non-NULL");
+	assert(list->size == 0
+		&& "FAIL: Trimming empty list returned non-zero size");
+	assert(list->current == NULL
+		&& "FAIL: Trimming empty list returned non-NULL current ptr");
+	assert(list->head == NULL
+		&& "FAIL: Trimming empty list returned non-NULL head ptr");
+	assert(list->tail == NULL
+		&& "FAIL: Trimming empty list returned non-NULL tail ptr");
+
+
+	/* Test Case 3 */
+	int testInt[5] = {0};
+	ListAdd(list, &testInt[0]);
+	assert(ListTrim(list) == &testInt[0]
+		&& "FAIL: The list did not return the trimmed item");
+	assert(list->size == 0
+		&& "FAIL: Trimming list with one item returned non-zero size");
+	assert(list->current == NULL
+		&& "FAIL: Trimming list with one item returned non-NULL current ptr");
+	assert(list->head == NULL
+		&& "FAIL: Trimming list with one item returned non-NULL head ptr");
+	assert(list->tail == NULL
+		&& "FAIL: Trimming list with one item returned non-NULL tail ptr");
+
+	/* Test Case 4 */
+	ListAdd(list, &testInt[0]);
+	ListAdd(list, &testInt[1]);
+	assert(ListTrim(list) == &testInt[1]
+		&& "FAIL: The list did not return the trimmed item");
+	assert(list->size == 1
+		&& "FAIL: Trimming list with two items returned wrong size");
+	assert(list->current->item == &testInt[0]
+		&& "FAIL: Trimming list with two items returned wrong current ptr");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Trimming list with two items returned wrong head ptr");
+	assert(list->tail->item == &testInt[0]
+		&& "FAIL: Trimming list with two items returned wrong tail ptr");
+
+	/* Test Case 5 */
+	ListAdd(list, &testInt[1]);
+	ListAdd(list, &testInt[2]);
+	assert(ListTrim(list) == &testInt[2]
+		&& "FAIL: The list did not return the trimmed item");
+	assert(list->size == 2
+		&& "FAIL: Trimming list with 3 items returned wrong size");
+	assert(list->current->item == &testInt[1]
+		&& "FAIL: Trimming list with 3 items returned wrong current ptr");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Trimming list with 3 items returned wrong head ptr");
+	assert(list->tail->item == &testInt[1]
+		&& "FAIL: Trimming list with 3 items returned wrong tail ptr");
+
+	/* Test Case 6 */
+	ListFree(list, NULL);
+	list = ListCreate();
+	ListAdd(list, &testInt[0]);
+	ListAdd(list, &testInt[1]);
+	ListAdd(list, &testInt[2]);
+	ListAdd(list, &testInt[3]);
+	assert(ListTrim(list) == &testInt[3]
+		&& "FAIL: The list did not return the trimmed item");
+	assert(list->size == 3
+		&& "FAIL: Trimming list with 4 items returned wrong size");
+	assert(list->current->item == &testInt[2]
+		&& "FAIL: Trimming list with 4 items returned wrong current ptr");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Trimming list with 4 items returned wrong head ptr");
+	assert(list->tail->item == &testInt[2]
+		&& "FAIL: Trimming list with 4 items returned wrong tail ptr");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("| ListTrim    |       6      |       27     |  PASS  |\n");
 }

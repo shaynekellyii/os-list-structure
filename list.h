@@ -10,9 +10,9 @@ typedef struct NODE {
 	struct NODE *next;
 } NODE;
 typedef struct LIST {
-	NODE *current; // Location of current node in node pool array
+	NODE *current;
 	NODE *head;
-	NODE *tail; // Location of tail node in node pool array 
+	NODE *tail;
 	int size;
 	int currentIsBeyond; // 0 if current is not beyond the list boundaries, -1 if before, 1 if after
 } LIST;
