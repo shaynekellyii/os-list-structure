@@ -323,6 +323,7 @@ void *ListRemove(LIST *list) {
 		NODE *postRemovedNode = list->current->next;
 		preRemovedNode->next = postRemovedNode;
 		postRemovedNode->previous = preRemovedNode;
+		list->current = postRemovedNode;
 	}
 
 	list->currentIsBeyond = 0;

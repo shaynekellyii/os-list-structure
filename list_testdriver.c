@@ -27,6 +27,7 @@ static void ListAddTest();
 static void ListInsertTest();
 static void ListAppendTest();
 static void ListPrependTest();
+static void ListRemoveTest();
 
 static void ListTrimTest();
 
@@ -35,8 +36,14 @@ static void ListTrimTest();
  ***************************************************************/
 int main(void) {
 	printf("\n\n*****************************************************\n");
+	printf("* CMPT 300 - Assignment 1 - List Data Structure     *\n");
+	printf("* Shayne Kelly II 	                            *\n");
 	printf("* List tests running...                             *\n");
 	printf("*****************************************************\n\n");
+
+	printf("------------------------------------------------------\n");
+	printf("| Test        | # Test Cases | # Assertions | Status |\n");
+	printf("------------------------------------------------------\n");
 
 	ListCreateTest();
 	ListCountTest();
@@ -49,9 +56,11 @@ int main(void) {
 	ListInsertTest();
 	ListAppendTest();
 	ListPrependTest();
+	ListRemoveTest();
 
 	ListTrimTest();
 
+	printf("------------------------------------------------------\n\n");
 	printf("\n*****************************************************\n");
 	printf("* All tests passed! Exiting...                      *\n");
 	printf("*****************************************************\n\n");
@@ -98,7 +107,7 @@ static void ListCreateTest() {
 	for (int i = 0; i < 10; i++) {
 		ListFree(listArr[i], NULL);
 	}
-	printf("ListCreate tests passed. 61 assertions passed.\n");
+	printf("| ListCreate  |       2      |       61     |  PASS  |\n");
 }
 
 /**
@@ -131,7 +140,7 @@ static void ListCountTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListCount tests passed. 201 assertions passed.\n");
+	printf("| ListCount   |       3      |      201     |  PASS  |\n");
 }
 
 /**
@@ -172,7 +181,7 @@ static void ListFirstTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListFirst tests passed. 7 assertions passed.\n");
+	printf("| ListFirst   |       4      |        7     |  PASS  |\n");
 }
 
 /**
@@ -213,7 +222,7 @@ static void ListLastTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListLast tests passed. 7 assertions passed.\n");
+	printf("| ListLast    |       4      |        7     |  PASS  |\n");
 }
 
 /**
@@ -316,7 +325,7 @@ static void ListNextTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListNext tests passed. 26 assertions passed.\n");
+	printf("| ListNext    |      10      |       26     |  PASS  |\n");
 }
 
 /**
@@ -418,7 +427,7 @@ static void ListPrevTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListPrev tests passed. 26 assertions passed.\n");
+	printf("| ListPrev    |      10      |       26     |  PASS  |\n");
 }
 
 /**
@@ -495,7 +504,7 @@ static void ListCurrTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListCurr tests passed. 10 assertions passed.\n");
+	printf("| ListCurr    |      10      |       10     |  PASS  |\n");
 }
 
 /**
@@ -580,7 +589,7 @@ static void ListAddTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListAdd tests passed. 23 assertions passed.\n");
+	printf("| ListAdd     |       6      |       23     |  PASS  |\n");
 }
 
 /**
@@ -664,7 +673,7 @@ static void ListInsertTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListInsert tests passed. 23 assertions passed.\n");
+	printf("| ListInsert  |       6      |       23     |  PASS  |\n");
 }
 
 /**
@@ -747,7 +756,7 @@ static void ListAppendTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListAppend tests passed. 23 assertions passed.\n");
+	printf("| ListAppend  |       6      |       23     |  PASS  |\n");
 }
 
 /**
@@ -830,7 +839,169 @@ static void ListPrependTest() {
 
 	/* Cleanup */
 	ListFree(list, NULL);
-	printf("ListPrepend tests passed. 23 assertions passed.\n");
+	printf("| ListPrepend |       6      |       23     |  PASS  |\n");
+}
+
+/**
+ * 1. Remove item from NULL list
+ * 2. Remove item from list with 1 item - current item beyond start
+ * 3. Remove item from list with 1 item - current item beyond end
+ * 4. Remove item from list with 1 item - current item is head
+ * 5. Remove item from list with 2 items - current item beyond start
+ * 6. Remove item from list with 2 items - current item beyond end
+ * 7. Remove item from list with 2 items - current item is head
+ * 8. Remove item from list with 2 items - current item is tail
+ * 9. Remove item from list with 3 items - current item is beyond start
+ * 10. Remove item from list with 3 items - current item is beyond end
+ * 11. Remove item from list with 3 items - current item is head
+ * 12. Remove item from list with 3 items - current item is middle
+ * 13. Remove item from list with 3 items - current item is tail
+ */
+static void ListRemoveTest() {
+	LIST *list = ListCreate();
+	int testInt[10] = {0};
+
+	/* Test Case 1 */
+	assert(ListRemove(list) == NULL
+		&& "FAIL: Removing NULL item returned non-NULL\n");
+
+	/* Test Case 2 */
+	ListAdd(list, &testInt[0]);
+	ListPrev(list);
+	assert(ListRemove(list) == NULL
+		&& "FAIL: Removing item when current is beyond the start of the list returned non-NULL\n");
+
+	/* Test Case 3 */
+	ListLast(list);
+	ListNext(list);
+	assert(ListRemove(list) == NULL
+		&& "FAIL: Removing item when current is beyond the end of the list returned non-NULL\n");
+
+	/* Test Case 4 */
+	ListFirst(list);
+	assert(ListRemove(list) == &testInt[0]
+		&& "FAIL: Removed item's value was not correct");
+	assert(list->size == 0
+		&& "FAIL: List's size should be 0 after removing item");
+	assert(list->current == NULL
+		&& "FAIL: List's current pointer should be NULL after removing item");
+	assert(list->head == NULL
+		&& "FAIL: List's head pointer should be NULL after removing item");
+	assert(list->tail == NULL
+		&& "FAIL: List's tail pointer should be NULL after removing item");
+
+	/* Test Case 5 */
+	ListAdd(list, &testInt[0]);
+	ListAdd(list, &testInt[1]);
+	ListFirst(list);
+	ListPrev(list);
+	assert(ListRemove(list) == NULL
+		&& "FAIL: Removing item when current is beyond the start of the list returned non-NULL\n");
+
+	/* Test Case 6 */
+	ListLast(list);
+	ListNext(list);
+	assert(ListRemove(list) == NULL
+		&& "FAIL: Removing item when current is beyond the end of the list returned non-NULL\n");
+
+	/* Test Case 7 */
+	ListFirst(list);
+	assert(ListRemove(list) == &testInt[0]
+		&& "FAIL: Removed item's value was not correct\n");
+	assert(list->size == 1
+		&& "FAIL: List's size should be 1 after removing item\n");
+	assert(list->current->item == &testInt[1]
+		&& "FAIL: List's current pointer should be set to the item after the removed item\n");
+	assert(list->head->item == &testInt[1]
+		&& "FAIL: List's head pointer should be set to the item after the removed item\n");
+	assert(list->tail->item == &testInt[1]
+		&& "FAIL: List's tail pointer should be set to the item after the removed item\n");
+
+	/* Test Case 8 */
+	ListPrepend(list, &testInt[0]);
+	ListLast(list);
+	assert(ListRemove(list) == &testInt[1]
+		&& "FAIL: Removed item's value was not correct\n");
+	assert(list->size == 1
+		&& "FAIL: List's size should be 1 after removing item\n");
+	assert(list->current->item == &testInt[0]
+		&& "FAIL: List's current pointer should be set to the item before the removed item\n");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: List's head pointer should be set to the item before the removed item\n");
+	assert(list->tail->item == &testInt[0]
+		&& "FAIL: List's tail pointer should be set to the item before the removed item\n");
+
+	/* Test Case 9 */
+	ListAppend(list, &testInt[1]);
+	ListAppend(list, &testInt[2]);
+	ListFirst(list);
+	ListPrev(list);
+	assert(ListRemove(list) == NULL
+		&& "FAIL: Removing item when current is beyond the start of the list returned non-NULL\n");
+
+	/* Test Case 10 */
+	ListLast(list);
+	ListNext(list);
+	assert(ListRemove(list) == NULL
+		&& "FAIL: Removing item when current is beyond the end of the list returned non-NULL\n");
+
+	/* Test Case 11 */
+	ListFirst(list);
+	assert(ListRemove(list) == &testInt[0]
+		&& "FAIL: Removed item's value was not correct\n");
+	assert(list->size == 2
+		&& "FAIL: List's size should be 2 after removing item\n");
+	assert(list->current->item == &testInt[1]
+		&& "FAIL: List's current pointer should be set to the item after the removed item\n");
+	assert(list->head->item == &testInt[1]
+		&& "FAIL: List's head pointer should be set to the item after the removed item\n");
+	assert(list->tail->item == &testInt[2]
+		&& "FAIL: List's tail pointer should be set to the last item\n");
+	assert(list->head->next->item == &testInt[2]
+		&& "FAIL: List head's next pointer should be set to the tail\n");
+	assert(list->tail->previous->item == &testInt[1]
+		&& "FAIL: List tail's previous pointer should be set to the item after the removed item\n");
+
+	/* Test Case 12 */
+	ListPrepend(list, &testInt[0]);
+	ListNext(list);
+	assert(ListRemove(list) == &testInt[1]
+		&& "FAIL: Removed item's value was not correct\n");
+	assert(list->size == 2
+		&& "FAIL: List's size should be 2 after removing item\n");
+	assert(list->current->item == &testInt[2]
+		&& "FAIL: List's current pointer should be set to the item after the removed item\n");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: List's head pointer should be set to the item before the removed item\n");
+	assert(list->tail->item == &testInt[2]
+		&& "FAIL: List's tail pointer should be set to the item after the removed item\n");
+	assert(list->head->next->item == &testInt[2]
+		&& "FAIL: List head's next pointer should be set to the item after the removed item\n");
+	assert(list->tail->previous->item == &testInt[0]
+		&& "FAIL: List tail's previous pointer should be set to the item before the removed item\n");
+
+	/* Test Case 13 */
+	ListFirst(list);
+	ListAdd(list, &testInt[1]);
+	ListNext(list);
+	assert(ListRemove(list) == &testInt[2]
+		&& "FAIL: Removed item's value was not correct\n");
+	assert(list->size == 2
+		&& "FAIL: List's size should be 2 after removing item\n");
+	assert(list->current->item == &testInt[1]
+		&& "FAIL: List's current pointer should be set to the item before the removed item\n");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: List's head pointer should be set to the first item\n");
+	assert(list->tail->item == &testInt[1]
+		&& "FAIL: List's tail pointer should be set to the item before the removed item\n");
+	assert(list->head->next->item == &testInt[1]
+		&& "FAIL: List head's next pointer should be set to the item after the removed item\n");
+	assert(list->tail->previous->item == &testInt[0]
+		&& "FAIL: List tail's previous pointer should be set to the item before the removed item\n");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	printf("| ListRemove  |      13      |       43     |  PASS  |\n");
 }
 
 /**
