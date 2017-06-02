@@ -451,16 +451,19 @@ void *ListTrim(LIST *list) {
  * If no match is found, the current pointer is left beyond the end of the list and a NULL pointer is returned.
  */
 void *ListSearch(LIST *list, int (*comparator)(void *, void *), void *comparisonArg) {
-	if (list == NULL || comparator == NULL) {
+	if (list == NULL || comparator == NULL || LIST_IS_EMPTY) {
 		return NULL;
 	}
 
-	NODE *searchNode = list->current;
+	NODE *searchNode = (list->current == NULL && list->currentIsBeyond == -1) ? 
+		list->head : list->current;
 	while (searchNode != NULL) {
 		if ((* comparator)(searchNode->item, comparisonArg) == 1) {
 			list->current = searchNode;
+			list->currentIsBeyond = 0;
 			return list->current->item;
 		}
+		searchNode = searchNode->next;
 	}
 
 	list->current = NULL;

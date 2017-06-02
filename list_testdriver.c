@@ -30,6 +30,13 @@ static void ListPrependTest();
 static void ListRemoveTest();
 static void ListConcatTest();
 static void ListTrimTest();
+static void ListSearchTest();
+
+/***************************************************************
+ * Globals                                                     *
+ ***************************************************************/
+int successComparator(void *item1, void *item2);
+int failComparator(void *item1, void *item2);
 
 /***************************************************************
  * Main (test driver)                                          *
@@ -59,7 +66,10 @@ int main(void) {
 	ListRemoveTest();
 	ListConcatTest();
 	ListTrimTest();
+	ListSearchTest();
 
+	printf("------------------------------------------------------\n");
+	printf("| TOTAL:      |     121      |      697     |  PASS  |\n");
 	printf("------------------------------------------------------\n\n");
 	printf("\n*****************************************************\n");
 	printf("* All tests passed! Exiting...                      *\n");
@@ -1530,4 +1540,290 @@ static void ListTrimTest() {
 	/* Cleanup */
 	ListFree(list, NULL);
 	printf("| ListTrim    |       6      |       27     |  PASS  |\n");
+}
+
+/** 
+ * 1. Search NULL list
+ * 2. Search with NULL comparator
+ * 3. Search empty list
+ * 4. Search list of 1, current = head, success
+ * 5. Search list of 1, current = head, fail
+ * 6. Search list of 1, current before head, success
+ * 7. Search list of 1, current before head, fail
+ * 8. Search list of 1, current after head
+ * 9. Search list of multiple, current before head, success
+ * 10. Search list of multiple, current before head, fail
+ * 11. Search list of multiple, current is head, success
+ * 12. Search list of multiple, current is head, fail
+ * 13. Search list of multiple, current is middle, success 
+ * 14. Search list of multiple, current is middle, fail
+ * 15. Search list of multiple, current is tail, success
+ * 16. Search list of multiple, current is tail, fail
+ * 17. Search list of multiple, current is beyond tail, fail
+ */
+static void ListSearchTest() {
+	LIST *list = NULL;
+
+	/* Test Case 1 */
+	assert(ListSearch(list, successComparator, NULL) == NULL
+		&& "FAIL: Searching NULL list returned non-NULL");
+
+	/* Test Case 2 */
+	list = ListCreate();
+	assert(ListSearch(list, NULL, NULL) == NULL
+		&& "FAIL: Searching with NULL comparator returned non-NULL");
+
+	/* Test Case 3 */
+	assert(ListSearch(list, successComparator, NULL) == NULL
+		&& "FAIL: Searching empty list returned non-NULL");
+	assert(list->size == 0
+		&& "FAIL: Searching empty list modified list size");
+	assert(list->head == NULL
+		&& "FAIL: Searching empty list modified head ptr");
+	assert(list->tail == NULL
+		&& "FAIL: Searching empty list modified tail ptr");
+	assert(list->current == NULL
+		&& "FAIL: Searching empty list modified current ptr");
+
+	/* Test Case 4 */
+	int testInt[3] = {0};
+	ListAdd(list, &testInt[0]);
+	assert(ListSearch(list, successComparator, NULL) == &testInt[0]
+		&& "FAIL: Searching list returned wrong value");
+	assert(list->size == 1
+		&& "FAIL: Searching list modified list size");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list->tail->item == &testInt[0]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list->current->item == &testInt[0]
+		&& "FAIL: Searching list did not set current ptr correctly");
+
+	/* Test Case 5 */
+	assert(ListSearch(list, failComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list->size == 1
+		&& "FAIL: Searching list modified list size");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list->tail->item == &testInt[0]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Test Case 6 */
+	ListFirst(list);
+	ListPrev(list);
+	assert(ListSearch(list, successComparator, NULL) == &testInt[0]
+		&& "FAIL: Searching list returned wrong value");
+	assert(list->size == 1
+		&& "FAIL: Searching list modified list size");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list->tail->item == &testInt[0]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list->current->item == &testInt[0]
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list->currentIsBeyond == 0
+		&& "FAIL: List current ptr recognised as beyond the end");
+
+	/* Test Case 7 */
+	ListFirst(list);
+	ListPrev(list);
+	assert(ListSearch(list, failComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list->size == 1
+		&& "FAIL: Searching list modified list size");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list->tail->item == &testInt[0]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Test Case 8 */
+	ListLast(list);
+	ListNext(list);
+	assert(ListSearch(list, successComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list->size == 1
+		&& "FAIL: Searching list modified list size");
+	assert(list->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list->tail->item == &testInt[0]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Test Case 9 */
+	LIST *list2 = ListCreate();
+	ListAdd(list2, &testInt[0]);
+	ListAdd(list2, &testInt[1]);
+	ListAdd(list2, &testInt[2]);
+	ListFirst(list2);
+	ListPrev(list2);
+	assert(ListSearch(list2, successComparator, NULL) == &testInt[0]
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current->item == &testInt[0]
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 0
+		&& "FAIL: List current ptr recognised as beyond the end");
+
+	/* Test Case 10 */
+	ListFirst(list2);
+	ListPrev(list2);
+	assert(ListSearch(list2, failComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Test Case 11 */
+	ListFirst(list2);
+	assert(ListSearch(list2, successComparator, NULL) == &testInt[0]
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current->item == &testInt[0]
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 0
+		&& "FAIL: List current ptr recognised as beyond the end");
+
+	/* Test Case 12 */
+	ListFirst(list2);
+	assert(ListSearch(list2, failComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Test Case 13 */
+	ListFirst(list2);
+	ListNext(list2);
+	assert(ListSearch(list2, successComparator, NULL) == &testInt[1]
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current->item == &testInt[1]
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 0
+		&& "FAIL: List current ptr recognised as beyond the end");
+
+	/* Test Case 14 */
+	ListFirst(list2);
+	ListNext(list2);
+	assert(ListSearch(list2, failComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Test Case 15 */
+	ListLast(list2);
+	assert(ListSearch(list2, successComparator, NULL) == &testInt[2]
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current->item == &testInt[2]
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 0
+		&& "FAIL: List current ptr recognised as beyond the end");
+
+	/* Test Case 16 */
+	ListLast(list2);
+	assert(ListSearch(list2, failComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Test Case 17 */
+	ListLast(list2);
+	ListNext(list2);
+	assert(ListSearch(list2, successComparator, NULL) == NULL
+		&& "FAIL: Searching list returned wrong value");
+	assert(list2->size == 3
+		&& "FAIL: Searching list modified list size");
+	assert(list2->head->item == &testInt[0]
+		&& "FAIL: Searching list modified head ptr");
+	assert(list2->tail->item == &testInt[2]
+		&& "FAIL: Searching list modified tail ptr");
+	assert(list2->current == NULL
+		&& "FAIL: Searching list did not set current ptr correctly");
+	assert(list2->currentIsBeyond == 1
+		&& "FAIL: List current ptr not recognised as beyond the end");
+
+	/* Cleanup */
+	ListFree(list, NULL);
+	ListFree(list2, NULL);
+	printf("| ListSearch  |      17      |       90     |  PASS  |\n");
+}
+
+/***************************************************************
+ * Globals                                                     *
+ ***************************************************************/
+
+int successComparator(void *item1, void *item2) {
+	/* Suppress unused variable warnings */
+	item1 = (int *)item1;
+	item2 = (int *)item2;
+	return 1;
+}
+int failComparator(void *item1, void *item2) {
+	/* Suppress unused variable warnings */
+	item1 = (int *)item1;
+	item2 = (int *)item2;
+	return 0;
 }
